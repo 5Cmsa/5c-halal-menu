@@ -1,5 +1,7 @@
 # 5C Halal Menu
 
+Live at https://taha6767.github.io/5c-halal-menu/
+
 Shows the halal dishes and seafood at each Claremont Colleges dining hall for
 the chosen day and meal. Tapping a dish shows how the hall itself listed it
 (name, halal flag, allergens, ingredients) with a link to the original menu.
@@ -27,9 +29,9 @@ npm run scrape   # refresh data/ for the next 7 days (Node 18+, no dependencies)
 npm run dev      # serve at http://localhost:4173
 ```
 
-The site is static, so any static host works. On GitHub, the workflow in
+The site is hosted on GitHub Pages from the `main` branch. The workflow in
 `.github/workflows/refresh-menus.yml` re-runs the scraper four times a day and
-commits the result.
+commits the result, which republishes the site.
 
 ## Layout
 
