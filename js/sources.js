@@ -89,7 +89,7 @@ function pomonaItem(recipe) {
   };
 }
 
-function indexPomonaFeed(feed) {
+export function indexPomonaFeed(feed) {
   const days = new Map();
   for (const menu of asArray(feed?.EatecExchange?.menu)) {
     const raw = String(menu['@servedate'] ?? '');
@@ -153,6 +153,23 @@ async function pomonaDay(hall, date) {
 
 const scrapedFiles = new Map();
 
+// The scraper stores each dish once per hall and has meals refer to it by id.
+// Returns null when the file has nothing for that date.
+export function mealsFromFile(file, date) {
+  const day = file.days?.[date];
+  if (!day) return null;
+  return day.meals.map((meal) => ({
+    name: meal.name,
+    anchor: meal.anchor ?? null,
+    slot: slotFor(meal.name, meal.start),
+    start: meal.start,
+    end: meal.end,
+    items: meal.stations.flatMap((station) =>
+      station.items.filter((id) => file.items[id]).map((id) => ({ ...file.items[id], station: station.name })),
+    ),
+  }));
+}
+
 async function scrapedDay(hall, date) {
   if (!scrapedFiles.has(hall.id)) {
     scrapedFiles.set(
@@ -165,17 +182,8 @@ async function scrapedDay(hall, date) {
   }
   const file = await scrapedFiles.get(hall.id);
   const day = file.days?.[date];
-  if (!day) return null;
-  const meals = day.meals.map((meal) => ({
-    name: meal.name,
-    anchor: meal.anchor ?? null,
-    slot: slotFor(meal.name, meal.start),
-    start: meal.start,
-    end: meal.end,
-    items: meal.stations.flatMap((station) =>
-      station.items.filter((id) => file.items[id]).map((id) => ({ ...file.items[id], station: station.name })),
-    ),
-  }));
+  const meals = mealsFromFile(file, date);
+  if (!meals) return null;
   return {
     status: meals.length ? 'ok' : 'empty',
     message: meals.length ? '' : 'The hall’s menu page shows no meals for this day.',

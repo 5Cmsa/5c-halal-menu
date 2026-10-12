@@ -26,6 +26,11 @@ The site is also an installable web app: `manifest.webmanifest` and the icons
 in `icons/` let phones add it to the home screen, and `sw.js` keeps the last
 loaded menus so it opens offline.
 
+The "Halal track record" chart reads `data/history.json`. After each scrape,
+`scripts/history.mjs` records how many halal dishes each hall's daytime meals
+and dinner had that day; the chart shows the share of served meals with at
+least one halal dish that carries no warning, over the last six months.
+
 ## Run it
 
 ```bash
@@ -44,4 +49,6 @@ commits the result, which republishes the site.
 - `js/app.js` renders the page and the detail popup.
 - `js/hadith.js` picks and loads the hadith of the day.
 - `js/links.js` builds links that open each hall's own page at the right day, meal or dish.
+- `js/stats.js` draws the track record chart.
 - `scripts/scrape.mjs` writes `data/<hall>.json` and `data/pomona-hours.json`.
+- `scripts/history.mjs` adds each day to `data/history.json`.

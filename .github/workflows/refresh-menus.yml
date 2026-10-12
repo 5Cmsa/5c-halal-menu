@@ -18,6 +18,7 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/scrape.mjs
+      - run: node scripts/history.mjs
       - name: Commit refreshed menus
         run: |
           git config user.name "github-actions[bot]"

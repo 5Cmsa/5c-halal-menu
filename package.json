@@ -6,6 +6,7 @@
   "description": "Halal meat and seafood at every Claremont Colleges dining hall, with the original menu listing one tap away.",
   "scripts": {
     "scrape": "node scripts/scrape.mjs",
+    "history": "node scripts/history.mjs",
     "dev": "python3 -m http.server 4173"
   },
   "engines": {

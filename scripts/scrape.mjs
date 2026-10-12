@@ -11,19 +11,19 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
-const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
+export const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
 const DAYS = Number(process.env.SCRAPE_DAYS ?? 7);
 const TIME_ZONE = 'America/Los_Angeles';
 const USER_AGENT = '5c-halal-menu/1.0 (student menu reader; low-volume scheduled fetch)';
 const PAUSE_MS = 500;
 
-const BON_APPETIT = [
+export const BON_APPETIT = [
   { id: 'collins', base: 'https://collins-cmc.cafebonappetit.com/cafe/collins/' },
   { id: 'malott', base: 'https://scripps.cafebonappetit.com/cafe/malott-dining-commons/' },
   { id: 'mcconnell', base: 'https://pitzer.cafebonappetit.com/cafe/mcconnell-bistro/' },
 ];
 
-const SODEXO = [
+export const SODEXO = [
   {
     id: 'hoch',
     weekUrl: (date) => {
@@ -43,23 +43,23 @@ const BA_ALLERGENS = new Set(['Peanut', 'Tree Nut', 'Sesame', 'Fish', 'Shellfish
 
 // ---------- helpers ----------
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function today() {
+export function today() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(new Date());
 }
 
-function addDays(date, n) {
+export function addDays(date, n) {
   const [y, m, d] = date.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
-async function fetchPage(url) {
+export async function fetchPage(url, accept = 'text/html,application/xhtml+xml') {
   let lastError;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml' },
+        headers: { 'User-Agent': USER_AGENT, Accept: accept },
         signal: AbortSignal.timeout(60_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -121,7 +121,7 @@ function assigned(html, pattern) {
 
 // ---------- Bon Appétit ----------
 
-function parseBonAppetit(html) {
+export function parseBonAppetit(html) {
   const rawItems = assigned(html, /Bamco\.menu_items\s*=\s*/);
   if (!rawItems) throw new Error('menu data not found in page');
   const legend = assigned(html, /Bamco\.cor_icons\s*=\s*/) ?? {};
@@ -202,7 +202,7 @@ async function scrapeBonAppetit(hall, dates) {
 
 // ---------- Sodexo ----------
 
-function parseSodexoWeek(html) {
+export function parseSodexoWeek(html) {
   const open = /<div[^>]*id=['"]nutData['"][^>]*>/.exec(html);
   if (!open) throw new Error('menu data not found in page');
   const start = open.index + open[0].length;

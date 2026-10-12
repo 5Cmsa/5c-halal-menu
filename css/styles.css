@@ -14,6 +14,7 @@
   --gold: #a98436;
   --halal: #0b6b4a;
   --halal-soft: #e2f1ea;
+  --halal-mark: #12855c; /* chart bars; checked against the card surface */
   --sea: var(--turquoise);
   --sea-soft: #dff1f1;
   --warn: #8a4b00;
@@ -43,6 +44,7 @@
   --gold: #d2b06a;
   --halal: #5fd3a4;
   --halal-soft: #143326;
+  --halal-mark: #2ea87a;
   --sea-soft: #12343a;
   --warn: #f0b860;
   --warn-soft: #3a2a10;
@@ -544,6 +546,82 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .rest + .hall-foot { margin-top: 0; }
 
 .stale { color: var(--warn); font-weight: 600; }
+
+/* ---------- track record chart ---------- */
+
+.stats {
+  margin-bottom: 28px;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.stats h2 { margin: 0; font: 600 1.3rem/1.2 var(--serif); }
+
+.stats-lede { margin: 4px 0 0; max-width: 70ch; color: var(--muted); font-size: 0.88rem; text-wrap: pretty; }
+
+.stats-chart {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 18px 28px;
+  margin-top: 16px;
+}
+
+.stat-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+
+.stat-head h3 { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin: 0; font: 600 1.05rem/1.2 var(--serif); }
+.stat-head .chip { font-family: var(--sans); }
+
+.stat-rate { font: 650 1.3rem/1 var(--sans); }
+
+.stat-sub { margin: 2px 0 8px; color: var(--muted); font-size: 0.82rem; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 62px 1fr 78px;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+/* A thin bar on a paler track of the same green, square where it starts and
+   rounded where the data ends. The padding widens the area that responds. */
+.stat-track {
+  padding-block: 7px;
+  background: linear-gradient(var(--halal-soft), var(--halal-soft)) center / 100% 10px no-repeat;
+  border-radius: 0 4px 4px 0;
+  cursor: default;
+}
+
+.stat-fill { height: 10px; border-radius: 0 4px 4px 0; background: var(--halal-mark); }
+
+.stat-track:hover .stat-fill,
+.stat-track:focus-visible .stat-fill { filter: brightness(1.15); }
+
+.stat-count { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.stat-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--card);
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+
+.stat-tip strong { font-weight: 700; }
+
+.stats-note { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.84rem; text-wrap: pretty; }
 
 /* ---------- loading ---------- */
 
