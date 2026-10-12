@@ -22,6 +22,10 @@ and Sahih Muslim listed by reference in `js/hadith.js`. The English text is
 read from the open [hadith-api](https://github.com/fawazahmed0/hadith-api)
 dataset and each one links to sunnah.com.
 
+The site is also an installable web app: `manifest.webmanifest` and the icons
+in `icons/` let phones add it to the home screen, and `sw.js` keeps the last
+loaded menus so it opens offline.
+
 ## Run it
 
 ```bash

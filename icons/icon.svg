@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed ground so phones can crop it to their own icon shape; the
+       star stays inside the central safe zone. -->
+  <rect width="512" height="512" fill="#1f4e96"/>
+  <g fill="#fdfbf6">
+    <rect x="118" y="118" width="276" height="276"/>
+    <rect x="118" y="118" width="276" height="276" transform="rotate(45 256 256)"/>
+  </g>
+  <circle cx="256" cy="256" r="112" fill="none" stroke="#17a2a8" stroke-width="7"/>
+  <text x="256" y="296" text-anchor="middle" font-family="Amiri, 'Geeza Pro', serif" font-weight="700" font-size="118" fill="#0b6b4a">حلال</text>
+</svg>

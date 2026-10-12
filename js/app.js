@@ -71,7 +71,7 @@ function formatRange(start, end) {
 
 function freshness(source) {
   if (!source.fetchedAt) return { text: '', stale: false };
-  if (source.live) return { text: 'read live', stale: false };
+  if (source.live) return { text: navigator.onLine ? 'read live' : 'saved copy', stale: false };
   const hours = (Date.now() - Date.parse(source.fetchedAt)) / 3_600_000;
   const text = hours < 1 ? 'updated within the hour' : hours < 48 ? `updated ${Math.round(hours)} h ago` : `updated ${Math.round(hours / 24)} days ago`;
   return { text, stale: hours > STALE_AFTER_HOURS };
@@ -461,6 +461,61 @@ function setTheme(theme) {
   }
 }
 
+// ---------- installing and working offline ----------
+
+// sw.js keeps the last good copy of everything the page loads.
+function setUpOffline() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((err) => console.warn('offline support unavailable', err));
+  const startedOffline = !navigator.onLine;
+  $('offline').hidden = navigator.onLine;
+  window.addEventListener('offline', () => ($('offline').hidden = false));
+  // Saved menus were shown; fetch the real ones now that there is a signal.
+  window.addEventListener('online', () => (startedOffline ? location.reload() : ($('offline').hidden = true)));
+}
+
+// Android offers the install itself, so the bar gets a button. iPhones have no
+// such offer, only the Share menu, so the bar says where to tap.
+function setUpInstallHint() {
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem('install-hint') === 'dismissed';
+  } catch {
+    // Storage is blocked: show the hint each visit.
+  }
+  if (installed || dismissed) return;
+
+  const bar = $('install');
+  const close = () => {
+    bar.hidden = true;
+    try {
+      localStorage.setItem('install-hint', 'dismissed');
+    } catch {
+      // Not remembered; it will show again next visit.
+    }
+  };
+  $('install-close').addEventListener('click', close);
+  window.addEventListener('appinstalled', close);
+
+  window.addEventListener('beforeinstallprompt', (offer) => {
+    offer.preventDefault();
+    $('install-text').textContent = 'Add 5C Halal to your home screen for one-tap access, even offline.';
+    $('install-go').hidden = false;
+    $('install-go').onclick = async () => {
+      offer.prompt();
+      await offer.userChoice;
+      close();
+    };
+    bar.hidden = false;
+  });
+
+  const iPhone = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (iPhone) {
+    $('install-text').textContent = 'Add 5C Halal to your Home Screen: tap the Share button, then “Add to Home Screen”.';
+    bar.hidden = false;
+  }
+}
+
 // ---------- start ----------
 
 $('theme-toggle').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
@@ -477,5 +532,7 @@ for (const hall of HALLS) {
   $('halls').append(card);
 }
 
+setUpOffline();
+setUpInstallHint();
 render();
 renderHadith();

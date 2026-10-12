@@ -6,6 +6,11 @@
   <title>5C Halal Menu</title>
   <meta name="description" content="Halal meat and seafood at every Claremont Colleges dining hall, with the hall's original menu listing one tap away.">
   <meta name="theme-color" content="#1f4e96">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="5C Halal">
   <script>
     // Apply the saved theme before the first paint. Light unless the visitor chose dark.
     try {
@@ -62,6 +67,7 @@
   </div>
 
   <main class="wrap">
+    <p class="offline" id="offline" role="status" hidden>You’re offline. These are the last menus this device loaded.</p>
     <section class="summary" id="summary" aria-live="polite"></section>
     <div class="halls" id="halls"></div>
   </main>
@@ -71,6 +77,12 @@
     <p>This page repeats what each dining hall published and is not a halal certification. Menus change and kitchens substitute, so check the original listing and ask dining staff when it matters.</p>
     <p>Seafood is listed separately so you can apply your own view on fish and shellfish. Dishes that mix seafood with other meat, pork or alcohol are marked.</p>
   </footer>
+
+  <aside class="install" id="install" aria-label="Install this app" hidden>
+    <p id="install-text"></p>
+    <button class="install-go" id="install-go" type="button" hidden>Install</button>
+    <button class="install-close" id="install-close" type="button" aria-label="Dismiss">✕</button>
+  </aside>
 
   <dialog class="detail" id="detail" aria-labelledby="detail-title">
     <div class="detail-body" id="detail-body"></div>
