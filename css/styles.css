@@ -1,0 +1,712 @@
+/* Palette borrowed from Iznik tilework: cobalt, turquoise, emerald and a
+   little coral on white. Green means halal and turquoise means seafood
+   everywhere on the page; cobalt is the general accent. The page is light
+   unless the visitor switches it: index.html sets data-theme on <html>. */
+:root {
+  color-scheme: light;
+  --paper: #fbfaf7;
+  --card: #ffffff;
+  --ink: #1c2430;
+  --muted: #5d6673;
+  --line: #e6e2d8;
+  --cobalt: #1f4e96;
+  --turquoise: #0e7c84;
+  --gold: #a98436;
+  --halal: #0b6b4a;
+  --halal-soft: #e2f1ea;
+  --sea: var(--turquoise);
+  --sea-soft: #dff1f1;
+  --warn: #8a4b00;
+  --warn-soft: #fbeed6;
+  --accent: var(--cobalt);
+  --on-accent: #ffffff;
+  --shadow: 0 1px 2px rgb(30 40 60 / 6%), 0 8px 24px rgb(30 40 60 / 5%);
+  --radius: 14px;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Amiri", serif;
+  --arabic: "Amiri", "Noto Naskh Arabic", "Geeza Pro", "Traditional Arabic", serif;
+
+  /* Eight-pointed star: two squares, one turned 45 degrees. */
+  --star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.5 22.5 12 12 22.5 1.5 12Z'/%3E%3Cpath d='M4.6 4.6h14.8v14.8H4.6z'/%3E%3C/svg%3E");
+  --lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%231f4e96' stroke-width='1'%3E%3Cpath d='M28 6 50 28 28 50 6 28Z'/%3E%3Cpath d='M12.4 12.4h31.2v31.2H12.4z'/%3E%3Ccircle cx='28' cy='28' r='7'/%3E%3Cpath d='M0 0l6 6M56 0l-6 6M0 56l6-6M56 56l-6-6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #10151b;
+  --card: #171e26;
+  --ink: #e9ecef;
+  --muted: #9aa5b1;
+  --line: #283340;
+  --cobalt: #8fb3ee;
+  --turquoise: #56c7cc;
+  --gold: #d2b06a;
+  --halal: #5fd3a4;
+  --halal-soft: #143326;
+  --sea-soft: #12343a;
+  --warn: #f0b860;
+  --warn-soft: #3a2a10;
+  --on-accent: #0d1626;
+  --shadow: none;
+  --lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%238fb3ee' stroke-width='1'%3E%3Cpath d='M28 6 50 28 28 50 6 28Z'/%3E%3Cpath d='M12.4 12.4h31.2v31.2H12.4z'/%3E%3Ccircle cx='28' cy='28' r='7'/%3E%3Cpath d='M0 0l6 6M56 0l-6 6M0 56l6-6M56 56l-6-6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* Keep the page still behind an open dish sheet. */
+html:has(dialog[open]) { overflow: hidden; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.45 var(--sans);
+}
+
+.wrap {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+[hidden] { display: none !important; }
+
+.star {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  background: currentColor;
+  -webkit-mask: var(--star) center / contain no-repeat;
+  mask: var(--star) center / contain no-repeat;
+}
+
+/* ---------- tile border and masthead ---------- */
+
+/* A tile border: white stars with turquoise hearts on cobalt, coral between. */
+.tile-band {
+  height: 16px;
+  background: #1f4e96
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='16' viewBox='0 0 32 16'%3E%3Cpath fill='%23fdfbf6' d='M16 2 22 8 16 14 10 8ZM11.76 3.76h8.48v8.48h-8.48z'/%3E%3Ccircle cx='16' cy='8' r='2.1' fill='%2317a2a8'/%3E%3Ccircle cx='0' cy='8' r='1.7' fill='%23e8664f'/%3E%3Ccircle cx='32' cy='8' r='1.7' fill='%23e8664f'/%3E%3C/svg%3E")
+    center / 32px 16px repeat-x;
+}
+
+.masthead { padding: 24px 0 16px; }
+
+.brand { display: flex; gap: 14px; align-items: center; }
+.brand-text { flex: 1; min-width: 0; }
+
+.theme-toggle {
+  flex: none;
+  align-self: flex-start;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--cobalt);
+  cursor: pointer;
+}
+
+.theme-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle .icon-sun,
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+
+.emblem { flex: none; width: 62px; height: 62px; }
+.emblem-star { fill: none; stroke: var(--cobalt); stroke-width: 1.6; stroke-linejoin: round; }
+.emblem-disc { fill: var(--card); stroke: var(--turquoise); stroke-width: 1.2; }
+.emblem-word { fill: var(--halal); font: 700 17px var(--arabic); }
+
+.masthead h1 {
+  margin: 0;
+  font: 600 clamp(1.6rem, 5vw, 2.3rem)/1.1 var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 46ch; text-wrap: pretty; }
+
+/* ---------- hadith of the day ---------- */
+
+.hadith {
+  position: relative;
+  margin-bottom: 18px;
+  padding: 16px 22px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Star lattice fading in from both sides, and a fine gold rule inside the
+   edge like the ruled frame of a manuscript page. */
+.hadith::before,
+.hadith::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.hadith::before {
+  inset: 0;
+  background: var(--lattice) center / 56px;
+  opacity: 0.09;
+  -webkit-mask: linear-gradient(90deg, #000, transparent 26%, transparent 74%, #000);
+  mask: linear-gradient(90deg, #000, transparent 26%, transparent 74%, #000);
+}
+
+.hadith::after {
+  inset: 6px;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: 9px;
+}
+
+.hadith > * { position: relative; }
+
+.hadith-label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 6px;
+  color: var(--gold);
+  font: 700 0.68rem/1.2 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hadith-label .star { width: 8px; height: 8px; }
+
+.hadith-text {
+  margin: 0 auto;
+  max-width: 62ch;
+  font: 400 1.1rem/1.5 var(--serif);
+  text-wrap: balance;
+}
+
+/* The reference sits small in the bottom corner so the saying has the room. */
+.hadith-ref {
+  display: block;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+.hadith .skeleton { padding: 14px 0 6px; justify-items: center; }
+.hadith .skeleton span { width: min(520px, 90%); }
+
+/* ---------- controls ---------- */
+
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-block: 1px solid var(--line);
+}
+
+.controls-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 10px;
+}
+
+.dates {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: -16px;
+  padding-inline: 16px;
+  max-width: calc(100% + 32px);
+}
+
+.dates::-webkit-scrollbar { display: none; }
+
+.date {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  min-width: 52px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  cursor: pointer;
+  line-height: 1.15;
+}
+
+.date small { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.date strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+
+.date[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.date[aria-pressed="true"] small { color: inherit; opacity: 0.85; }
+
+.meals {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+}
+
+.meal {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font-weight: 550;
+}
+
+.meal[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- summary ---------- */
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  margin: 18px 0 14px;
+}
+
+.summary-label { font-weight: 600; margin-right: 2px; }
+
+.jump {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--halal-soft);
+  color: var(--halal);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.jump b { font-variant-numeric: tabular-nums; }
+
+.summary-none { color: var(--muted); font-size: 0.92rem; }
+
+/* ---------- hall cards ---------- */
+
+.halls {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: 16px;
+  align-items: start;
+  padding-bottom: 28px;
+}
+
+.hall {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  scroll-margin-top: 130px;
+}
+
+.hall-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 16px 6px;
+}
+
+.hall-head h2 { margin: 0; font: 600 1.3rem/1.2 var(--serif); }
+
+.hall-college { color: var(--muted); font-size: 0.88rem; white-space: nowrap; }
+
+/* Serving hours for the meal on show (bold) and the ones that run into it. */
+.hours {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 14px;
+  margin: 0;
+  padding: 0 16px 2px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.hours-row { display: contents; }
+.hours dt { white-space: nowrap; }
+.hours dd { margin: 0; font-variant-numeric: tabular-nums; }
+.hours small { display: block; font-size: 0.78rem; }
+
+.hours-row.showing dt,
+.hours-row.showing dd { color: var(--ink); font-weight: 650; }
+
+.notice {
+  margin: 10px 16px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 0.86rem;
+}
+
+.group { margin-top: 12px; }
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0 16px 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.group-title::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  background: currentColor;
+  -webkit-mask: var(--star) center / contain no-repeat;
+  mask: var(--star) center / contain no-repeat;
+}
+
+.group.halal .group-title { color: var(--halal); }
+.group.seafood .group-title { color: var(--sea); }
+
+.group-count { color: var(--muted); font-weight: 600; letter-spacing: 0; }
+
+.empty { margin: 0; padding: 2px 16px 4px; color: var(--muted); font-size: 0.92rem; }
+
+.hours + .empty { padding-top: 10px; }
+
+.items { list-style: none; margin: 0; padding: 0; }
+
+.item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 16px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.items > li:first-child .item { border-top-color: transparent; }
+
+.item:active { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+
+@media (hover: hover) {
+  .item:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+}
+
+.item-main { flex: 1; min-width: 0; display: grid; gap: 3px; }
+
+.item-name { font-weight: 600; text-wrap: pretty; }
+
+.lower { text-transform: capitalize; }
+
+.item-tags { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+
+.item-meta { color: var(--muted); font-size: 0.84rem; }
+
+.item-warn { color: var(--warn); font-size: 0.84rem; font-weight: 550; }
+
+.chev { flex: none; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.chip.halal { background: var(--halal-soft); color: var(--halal); }
+.chip.sea { background: var(--sea-soft); color: var(--sea); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.plain { border: 1px solid var(--line); color: var(--muted); }
+
+/* ---------- full menu ---------- */
+
+.rest { margin-top: 12px; border-top: 1px solid var(--line); }
+
+.rest > summary {
+  padding: 11px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.rest[open] > summary { color: var(--ink); }
+
+.station {
+  margin: 8px 0 0;
+  padding: 0 16px 2px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rest .item { padding-block: 6px; border-top: 0; }
+.rest .item-name { font-weight: 500; font-size: 0.94rem; }
+.rest-note { margin: 8px 0 0; padding: 0 16px 12px; color: var(--muted); font-size: 0.84rem; }
+
+.hall-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 12px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.rest + .hall-foot { margin-top: 0; }
+
+.stale { color: var(--warn); font-weight: 600; }
+
+/* ---------- loading ---------- */
+
+.skeleton { padding: 10px 16px 16px; display: grid; gap: 10px; }
+
+.skeleton span {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--line) 25%, color-mix(in srgb, var(--line) 45%, transparent) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+
+.skeleton span:nth-child(2) { width: 70%; }
+.skeleton span:nth-child(3) { width: 85%; }
+
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+@media (prefers-reduced-motion: reduce) { .skeleton span { animation: none; } }
+
+/* ---------- footer ---------- */
+
+.foot { padding-block: 0 calc(40px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 0.86rem; }
+.foot p { margin: 0 0 8px; max-width: 78ch; text-wrap: pretty; }
+
+.rule {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  color: var(--gold);
+}
+
+.rule::before,
+.rule::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* ---------- detail dialog ---------- */
+
+.detail {
+  width: min(600px, calc(100% - 24px));
+  max-height: min(86vh, 860px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 30%);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.detail::backdrop { background: rgb(15 20 28 / 55%); }
+
+.detail-body { padding: 0 20px calc(22px + env(safe-area-inset-bottom)); }
+
+/* The title and close button stay put while a long ingredient list scrolls. */
+.detail-top {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 0 4px;
+  background: var(--card);
+}
+
+.eyebrow { margin: 0; color: var(--muted); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+
+.detail h2 { margin: 4px 0 6px; font: 600 1.5rem/1.2 var(--serif); text-wrap: balance; }
+
+.close {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.detail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.reason {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--halal-soft);
+  font-size: 0.94rem;
+}
+
+.reason.sea { background: var(--sea-soft); }
+.reason.none { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.reason.warn { background: var(--warn-soft); color: var(--warn); }
+
+.reason h3 { margin: 0 0 2px; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.reason p { margin: 0; }
+.reason ul { margin: 0; padding-left: 18px; }
+
+.listing { margin-top: 18px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+
+.listing-head { padding: 10px 14px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.listing-head h3 { margin: 0; font-size: 0.98rem; }
+.listing-head p { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
+
+.fields { margin: 0; }
+
+.field { display: grid; grid-template-columns: 118px 1fr; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 0.93rem; }
+.field dt { color: var(--muted); }
+.field dd { margin: 0; overflow-wrap: anywhere; }
+
+.field.key { background: var(--halal-soft); }
+.field.key dt, .field.key dd { color: var(--halal); font-weight: 700; }
+.field.key.no { background: var(--warn-soft); }
+.field.key.no dt, .field.key.no dd { color: var(--warn); }
+
+.flags { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.flag-no { color: var(--muted); }
+.flag-yes { font-weight: 650; }
+
+.absent { color: var(--muted); font-style: italic; }
+
+mark { padding: 0 3px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); font-weight: 700; }
+mark.good { background: var(--halal-soft); color: var(--halal); }
+
+.source-note { margin: 0; padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.86rem; }
+
+.original {
+  display: block;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
+}
+
+.where { margin: 8px 0 0; color: var(--muted); font-size: 0.86rem; text-align: center; text-wrap: balance; }
+
+.fineprint { margin: 12px 0 0; color: var(--muted); font-size: 0.82rem; }
+
+/* ---------- phones ---------- */
+
+@media (max-width: 560px) {
+  .masthead { padding: 16px 0 12px; }
+  .brand { gap: 12px; }
+  .emblem { width: 48px; height: 48px; }
+  .lede { margin-top: 4px; font-size: 0.93rem; }
+  .lede-more { display: none; }
+  .theme-toggle { width: 40px; height: 40px; }
+
+  .hadith { margin-bottom: 14px; padding: 14px 18px 14px; }
+  .hadith-text { font-size: 1.04rem; }
+
+  /* All seven days fit across the screen and the meal switch spans it, so
+     both are one thumb-tap away while scrolling. */
+  .controls-inner { gap: 8px; padding-block: 8px; }
+
+  .dates {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .date { min-width: 0; padding: 6px 0; }
+  .date small { font-size: 0.62rem; letter-spacing: 0.03em; }
+
+  .meals { display: flex; width: 100%; }
+  .meal { flex: 1; padding-block: 10px; }
+
+  .summary { margin: 14px 0 12px; }
+  .halls { gap: 14px; }
+  .hall { scroll-margin-top: 128px; }
+
+  .item { padding-block: 11px; }
+  .rest > summary { padding-block: 14px; }
+  .rest .item { padding-block: 9px; }
+  .hall-foot a { padding-block: 4px; }
+
+  /* The dish sheet slides up from the bottom edge. */
+  .detail {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90dvh;
+    margin: auto 0 0;
+    border-radius: 18px 18px 0 0;
+    border-bottom: 0;
+  }
+
+  .detail-body { padding-inline: 16px; }
+  .detail-top { padding-top: 22px; }
+
+  .detail-top::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+    transform: translateX(-50%);
+  }
+
+  .detail h2 { font-size: 1.3rem; }
+  .field { grid-template-columns: 92px 1fr; padding-inline: 12px; }
+  .original { padding-block: 14px; }
+}

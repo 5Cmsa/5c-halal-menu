@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>5C Halal Menu</title>
+  <meta name="description" content="Halal meat and seafood at every Claremont Colleges dining hall, with the hall's original menu listing one tap away.">
+  <meta name="theme-color" content="#1f4e96">
+  <script>
+    // Apply the saved theme before the first paint. Light unless the visitor chose dark.
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+    } catch {
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231f4e96' d='M12 1.5 22.5 12 12 22.5 1.5 12ZM4.6 4.6h14.8v14.8H4.6z'/%3E%3Ccircle cx='12' cy='12' r='3.4' fill='%23fdfbf6'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div class="tile-band" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <div class="wrap brand">
+      <svg class="emblem" viewBox="0 0 64 64" aria-hidden="true">
+        <g class="emblem-star">
+          <rect x="11" y="11" width="42" height="42"/>
+          <rect x="11" y="11" width="42" height="42" transform="rotate(45 32 32)"/>
+        </g>
+        <circle class="emblem-disc" cx="32" cy="32" r="16.5"/>
+        <text class="emblem-word" x="32" y="38" text-anchor="middle">حلال</text>
+      </svg>
+      <div class="brand-text">
+        <h1>5C Halal Menu</h1>
+        <p class="lede">Halal meat and seafood at every Claremont dining hall. <span class="lede-more">Tap a dish to see how the hall listed it.</span></p>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="wrap" id="hadith-section" aria-labelledby="hadith-label">
+    <article class="hadith">
+      <h2 class="hadith-label" id="hadith-label"><span class="star"></span>Hadith of the day<span class="star"></span></h2>
+      <div class="hadith-body" id="hadith-body">
+        <div class="skeleton" aria-label="Loading hadith"><span></span><span></span></div>
+      </div>
+    </article>
+  </section>
+
+  <div class="controls">
+    <div class="wrap controls-inner">
+      <div class="dates" id="dates" role="group" aria-label="Day"></div>
+      <div class="meals" id="meals" role="group" aria-label="Meal"></div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <section class="summary" id="summary" aria-live="polite"></section>
+    <div class="halls" id="halls"></div>
+  </main>
+
+  <footer class="wrap foot">
+    <div class="rule" aria-hidden="true"><span class="star"></span></div>
+    <p>This page repeats what each dining hall published and is not a halal certification. Menus change and kitchens substitute, so check the original listing and ask dining staff when it matters.</p>
+    <p>Seafood is listed separately so you can apply your own view on fish and shellfish. Dishes that mix seafood with other meat, pork or alcohol are marked.</p>
+  </footer>
+
+  <dialog class="detail" id="detail" aria-labelledby="detail-title">
+    <div class="detail-body" id="detail-body"></div>
+  </dialog>
+
+  <noscript><p class="wrap">This page needs JavaScript to load today's menus.</p></noscript>
+</body>
+</html>

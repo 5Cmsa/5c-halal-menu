@@ -1,0 +1,14 @@
+{
+  "name": "5c-halal-menu",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Halal meat and seafood at every Claremont Colleges dining hall, with the original menu listing one tap away.",
+  "scripts": {
+    "scrape": "node scripts/scrape.mjs",
+    "dev": "python3 -m http.server 4173"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

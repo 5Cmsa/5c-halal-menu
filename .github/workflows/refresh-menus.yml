@@ -1,0 +1,27 @@
+name: Refresh menus
+
+on:
+  schedule:
+    # 6am, 10am, 2pm and 6pm Pacific (daylight time); one hour earlier in winter.
+    - cron: '0 1,13,17,21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/scrape.mjs
+      - name: Commit refreshed menus
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Refresh menus"
+          git push
