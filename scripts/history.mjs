@@ -23,13 +23,16 @@ const PAUSE_MS = 400;
 
 // { daytime: { halal, clear }, dinner: { halal, clear } }, with a period left
 // out when the hall served nothing in it. Breakfast, brunch and lunch are one
-// daytime period. "clear" counts halal dishes with no warning attached.
+// daytime period. "clear" counts halal dishes with no warning attached. Only
+// the day's own menu counts: Bon Appétit's standing list is the same every
+// day whether or not the dish is out, so it says nothing about a given meal.
 function tally(meals) {
   const periods = {};
   for (const meal of meals) {
     if (!meal.items.length) continue;
     const dishes = (periods[meal.slot === 'dinner' ? 'dinner' : 'daytime'] ??= new Map());
     for (const item of meal.items) {
+      if (!item.featured) continue;
       const verdict = classify(item);
       if (!verdict.halal) continue;
       const name = item.name.toLowerCase();

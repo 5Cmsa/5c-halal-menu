@@ -450,6 +450,11 @@ a { color: var(--accent); text-underline-offset: 2px; }
 
 .empty { margin: 0; padding: 2px 16px 4px; color: var(--muted); font-size: 0.92rem; }
 
+/* Dishes from a hall's every-day list, kept apart from the day's menu. */
+.standing > summary { padding: 6px 16px; color: var(--muted); font-size: 0.86rem; cursor: pointer; }
+.standing-note { margin: 0; padding: 0 16px 4px; color: var(--muted); font-size: 0.82rem; text-wrap: pretty; }
+.standing .item-name { font-weight: 500; color: var(--muted); }
+
 .hours + .empty { padding-top: 10px; }
 
 .items { list-style: none; margin: 0; padding: 0; }

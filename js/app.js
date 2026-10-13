@@ -14,6 +14,8 @@ const SLOTS = [
   ['lunch', 'Lunch'],
   ['dinner', 'Dinner'],
 ];
+const STANDING_NOTE = 'The hall lists these every day under “Additional Favorites”, whether or not they are out. They may not be served today.';
+
 const CAUTION_LABELS = {
   flag: 'Hall’s halal flag says no',
   pork: 'Mentions pork',
@@ -102,18 +104,26 @@ function buildView(day, slot) {
       const key = item.name.toLowerCase();
       const entry = { item, meal, verdict: classify(item) };
       const existing = byName.get(key);
-      // The same dish can be listed twice; keep the copy the hall marked halal.
-      if (!existing || (entry.verdict.halal && !existing.verdict.halal)) byName.set(key, entry);
+      // The same dish can be listed twice; keep the copy the hall marked halal,
+      // and a copy from the day's menu over one from the standing list.
+      const better = existing && (entry.verdict.halal ? !existing.verdict.halal || (entry.item.featured && !existing.item.featured) : !existing.verdict.halal && entry.item.featured && !existing.item.featured);
+      if (!existing || better) byName.set(key, entry);
     }
   }
   const entries = [...byName.values()];
-  const rank = ({ item, verdict }) => (verdict.cautions.length ? 2 : 0) + (item.featured ? 0 : 1);
-  const ordered = (list) => list.sort((a, b) => rank(a) - rank(b));
+  const ordered = (list) => list.sort((a, b) => a.verdict.cautions.length - b.verdict.cautions.length);
+  const halal = entries.filter((e) => e.verdict.halal);
+  const seafood = entries.filter((e) => !e.verdict.halal && e.verdict.seafood);
+  // Bon Appétit pages carry a standing list ("Additional Favorites") that is
+  // the same every day whether or not the dish is out, so only the day's own
+  // menu fills the main lists; standing dishes are kept apart and marked.
+  const today = (e) => e.item.featured;
   return {
     meals,
     entries,
-    halal: ordered(entries.filter((e) => e.verdict.halal)),
-    seafood: ordered(entries.filter((e) => !e.verdict.halal && e.verdict.seafood)),
+    halal: ordered(halal.filter(today)),
+    seafood: ordered(seafood.filter(today)),
+    standing: { halal: halal.filter((e) => !today(e)), seafood: seafood.filter((e) => !today(e)) },
   };
 }
 
@@ -157,12 +167,21 @@ function itemRow(hall, day, entry, { compact = false } = {}) {
   );
 }
 
-function group(kind, title, list, emptyText, hall, day) {
+function group(kind, title, list, standing, emptyText, hall, day) {
   return h(
     'section',
     { class: `group ${kind}` },
     h('h3', { class: 'group-title' }, title, list.length ? h('span', { class: 'group-count' }, String(list.length)) : null),
     list.length ? h('ul', { class: 'items' }, list.map((entry) => itemRow(hall, day, entry))) : h('p', { class: 'empty' }, emptyText),
+    standing.length
+      ? h(
+          'details',
+          { class: 'standing' },
+          h('summary', {}, `${standing.length} more on the standing list`),
+          h('p', { class: 'standing-note' }, STANDING_NOTE),
+          h('ul', { class: 'items' }, standing.map((entry) => itemRow(hall, day, entry))),
+        )
+      : null,
   );
 }
 
@@ -186,7 +205,7 @@ function fullMenu(hall, day, view) {
     h(
       'p',
       { class: 'rest-note' },
-      everyday ? `Plus ${everyday} more items (sides, salad bar, condiments) on the original menu.` : 'Tap a dish to see how the hall listed it.',
+      everyday ? `Plus ${everyday} items on the hall’s standing list (deli, salad bar, extras), which is the same every day.` : 'Tap a dish to see how the hall listed it.',
     ),
   );
 }
@@ -250,8 +269,8 @@ function fillCard(hall, card, day) {
       );
     }
     parts.push(
-      group('halal', 'Halal', view.halal, 'None labelled halal on this menu.', hall, day),
-      group('seafood', 'Seafood', view.seafood, 'No seafood dishes listed.', hall, day),
+      group('halal', 'Halal', view.halal, view.standing.halal, 'None labelled halal on this menu.', hall, day),
+      group('seafood', 'Seafood', view.seafood, view.standing.seafood, 'No seafood dishes on today’s menu.', hall, day),
       fullMenu(hall, day, view),
     );
   }
@@ -393,6 +412,9 @@ function reasons(item, verdict) {
   if (!verdict.halal && !verdict.seafood) {
     const text = item.halalFlag === false ? 'The hall’s own menu marks this dish Halal: No.' : 'Nothing on the hall’s menu marks this dish as halal.';
     blocks.push(h('div', { class: 'reason none' }, h('h3', {}, 'Not shown as halal'), h('p', {}, text)));
+  }
+  if (!item.featured) {
+    blocks.push(h('div', { class: 'reason warn' }, h('h3', {}, 'On the standing list'), h('p', {}, STANDING_NOTE)));
   }
   if (verdict.cautions.length) {
     blocks.push(h('div', { class: 'reason warn' }, h('h3', {}, 'Check before you eat'), h('ul', {}, verdict.cautions.map((caution) => h('li', {}, caution.text)))));
