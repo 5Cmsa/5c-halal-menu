@@ -1,6 +1,6 @@
 # 5C Halal Menu
 
-Live at https://taha6767.github.io/5c-halal-menu/
+Live at https://5cmsa.github.io/5c-halal-menu/
 
 Shows the halal dishes and seafood at each Claremont Colleges dining hall for
 the chosen day and meal. Tapping a dish shows how the hall itself listed it
