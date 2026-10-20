@@ -2,3 +2,4 @@
 node_modules/
 .claude/
 CLAUDE.local.md
+.agents/rules/local-setup.md
