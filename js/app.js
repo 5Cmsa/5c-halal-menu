@@ -11,7 +11,7 @@ const DAYS_SHOWN = 7;
 const STALE_AFTER_HOURS = 26;
 const SLOTS = [
   ['breakfast', 'Breakfast'],
-  ['lunch', 'Lunch'],
+  ['lunch', 'Lunch/Brunch'],
   ['dinner', 'Dinner'],
 ];
 const STANDING_NOTE = 'The hall lists these every day under “Additional Favorites”, whether or not they are out. They may not be served today.';
@@ -41,13 +41,19 @@ function formatDate(date, options) {
   return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', ...options }).format(new Date(`${date}T12:00:00Z`));
 }
 
-function currentSlot() {
+function isWeekend(date) {
+  const day = new Date(`${date}T12:00:00Z`).getUTCDay();
+  return day === 0 || day === 6;
+}
+
+function currentSlot(date) {
   const [hours, minutes] = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
     .format(new Date())
     .split(':')
     .map(Number);
   const time = hours + minutes / 60;
-  return time < 10.5 ? 'breakfast' : time < 14.5 ? 'lunch' : 'dinner';
+  if (time < 10.5 && !isWeekend(date)) return 'breakfast';
+  return time < 14.5 ? 'lunch' : 'dinner';
 }
 
 // "07:30", "10:00" -> "7:30 – 10 am"; "11:00", "13:30" -> "11 am – 1:30 pm"
@@ -74,26 +80,41 @@ function freshness(source) {
 const today = todayInClaremont();
 const dates = Array.from({ length: DAYS_SHOWN }, (_, i) => addDays(today, i));
 const params = new URLSearchParams(location.search);
+const initialDate = dates.includes(params.get('date')) ? params.get('date') : today;
 const state = {
-  date: dates.includes(params.get('date')) ? params.get('date') : today,
-  slot: SLOTS.some(([id]) => id === params.get('meal')) ? params.get('meal') : currentSlot(),
+  date: initialDate,
+  slot: SLOTS.some(([id]) => id === params.get('meal')) ? params.get('meal') : currentSlot(initialDate),
 };
 
 const loaded = new Map(); // "hall|date" -> day
 const counts = new Map(); // hall id -> halal dishes in the current view
+const ranks = new Map(); // hall id -> { options, halal, hasSlotMeals, hasDayMeals }
 const cards = new Map();
 let renderToken = 0;
 
 const slotLabel = () => SLOTS.find(([id]) => id === state.slot)[1];
 
+// True unless the chosen day is a weekend or every loaded hall has no breakfast.
+function dateHasBreakfast(date) {
+  if (isWeekend(date)) return false;
+  const days = HALLS.map((hall) => loaded.get(`${hall.id}|${date}`)).filter(Boolean);
+  if (days.length < HALLS.length) return true;
+  return days.some((day) => day.meals.some((meal) => meal.slot === 'breakfast' && meal.items.some((item) => item.featured)));
+}
+
+function visibleSlots(date) {
+  return dateHasBreakfast(date) ? SLOTS : SLOTS.filter(([id]) => id !== 'breakfast');
+}
+
 // ---------- view model ----------
 
 function mealsForSlot(meals, slot) {
-  const exact = meals.filter((meal) => meal.slot === slot);
-  const brunch = meals.filter((meal) => meal.slot === 'brunch');
-  if (slot === 'lunch') return [...brunch, ...exact];
-  if (slot === 'breakfast') return exact.length ? exact : brunch;
-  return exact;
+  if (slot === 'lunch') {
+    const lunch = meals.filter((meal) => meal.slot === 'lunch');
+    const brunch = meals.filter((meal) => meal.slot === 'brunch' && (!lunch.length || meal.items.some((item) => item.featured)));
+    return [...brunch, ...lunch];
+  }
+  return meals.filter((meal) => meal.slot === slot);
 }
 
 function buildView(day, slot) {
@@ -142,12 +163,12 @@ function verdictChips(verdict) {
 function itemRow(hall, day, entry, { compact = false } = {}) {
   const { item, verdict } = entry;
   const tags = verdictChips(verdict);
-  if (compact) {
-    if (item.vegan) tags.push(chip('plain', 'Vegan'));
-    else if (item.vegetarian) tags.push(chip('plain', 'Vegetarian'));
-  } else if (item.station) {
+  const dietChip = item.vegan ? chip('plain', 'Vegan') : item.vegetarian ? chip('plain', 'Vegetarian') : null;
+  if (!compact && item.station) {
     tags.push(h('span', { class: `item-meta${isLower(item.station) ? ' lower' : ''}` }, item.station));
   }
+  const inlineChips = compact ? [...tags, dietChip].filter(Boolean) : [dietChip].filter(Boolean);
+  const belowTags = compact ? [] : tags;
   const warnings = [...new Set(verdict.cautions.map((caution) => CAUTION_LABELS[caution.kind]))].join(' · ');
   return h(
     'li',
@@ -158,8 +179,13 @@ function itemRow(hall, day, entry, { compact = false } = {}) {
       h(
         'span',
         { class: 'item-main' },
-        h('span', { class: `item-name${isLower(item.name) ? ' lower' : ''}` }, item.name),
-        tags.length ? h('span', { class: 'item-tags' }, tags) : null,
+        h(
+          'span',
+          { class: 'item-head' },
+          h('span', { class: `item-name${isLower(item.name) ? ' lower' : ''}` }, item.name),
+          ...inlineChips,
+        ),
+        belowTags.length ? h('span', { class: 'item-tags' }, belowTags) : null,
         warnings && (verdict.halal || verdict.seafood) ? h('span', { class: 'item-warn' }, `Check: ${warnings}`) : null,
       ),
       h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'),
@@ -167,46 +193,79 @@ function itemRow(hall, day, entry, { compact = false } = {}) {
   );
 }
 
-function group(kind, title, list, standing, emptyText, hall, day) {
+function group(kind, title, list, emptyText, hall, day) {
   return h(
     'section',
     { class: `group ${kind}` },
     h('h3', { class: 'group-title' }, title, list.length ? h('span', { class: 'group-count' }, String(list.length)) : null),
     list.length ? h('ul', { class: 'items' }, list.map((entry) => itemRow(hall, day, entry))) : h('p', { class: 'empty' }, emptyText),
-    standing.length
-      ? h(
-          'details',
-          { class: 'standing' },
-          h('summary', {}, `${standing.length} more on the standing list`),
-          h('p', { class: 'standing-note' }, STANDING_NOTE),
-          h('ul', { class: 'items' }, standing.map((entry) => itemRow(hall, day, entry))),
-        )
-      : null,
   );
 }
 
-function fullMenu(hall, day, view) {
-  const featured = view.entries.filter((e) => e.item.featured);
-  const everyday = view.entries.length - featured.length;
+const PREVIEW_DISHES = 4;
+
+function stationList(hall, day, entries) {
   const stations = new Map();
-  for (const entry of featured) {
+  for (const entry of entries) {
     const name = entry.item.station || 'Menu';
     if (!stations.has(name)) stations.set(name, []);
     stations.get(name).push(entry);
   }
+  return [...stations].flatMap(([name, list]) => [
+    h('h4', { class: `station${isLower(name) ? ' lower' : ''}` }, name),
+    h('ul', { class: 'items' }, list.map((entry) => itemRow(hall, day, entry, { compact: true }))),
+  ]);
+}
+
+function fullMenu(hall, day, view) {
+  const featured = view.entries.filter((e) => e.item.featured);
   return h(
     'details',
     { class: 'rest' },
     h('summary', {}, `Full menu · ${featured.length} dishes`),
-    [...stations].map(([name, list]) => [
-      h('h4', { class: `station${isLower(name) ? ' lower' : ''}` }, name),
-      h('ul', { class: 'items' }, list.map((entry) => itemRow(hall, day, entry, { compact: true }))),
-    ]),
-    h(
-      'p',
-      { class: 'rest-note' },
-      everyday ? `Plus ${everyday} items on the hall’s standing list (deli, salad bar, extras), which is the same every day.` : 'Tap a dish to see how the hall listed it.',
-    ),
+    ...stationList(hall, day, featured),
+    h('p', { class: 'rest-note' }, 'Tap a dish to see how the hall listed it.'),
+  );
+}
+
+// Shown when a meal has neither halal nor seafood dishes on today's menu, so
+// the card still gives a quick look at what the hall is serving.
+function inlineFullMenu(hall, day, view) {
+  const featured = view.entries.filter((e) => e.item.featured);
+  if (!featured.length) {
+    return h('section', { class: 'group' }, h('p', { class: 'empty' }, 'No dishes posted for this meal yet.'));
+  }
+
+  const listWrap = h('div', { class: 'inline-stations' });
+  const hiddenCount = featured.length - PREVIEW_DISHES;
+  let expanded = false;
+  const toggleBtn =
+    hiddenCount > 0
+      ? h('button', {
+          class: 'more-dishes',
+          type: 'button',
+          onclick: () => {
+            expanded = !expanded;
+            sync();
+          },
+        })
+      : null;
+
+  function sync() {
+    listWrap.replaceChildren(...stationList(hall, day, expanded ? featured : featured.slice(0, PREVIEW_DISHES)));
+    if (toggleBtn) {
+      toggleBtn.textContent = expanded ? 'Show fewer dishes' : `See all ${featured.length} dishes (${hiddenCount} more)`;
+    }
+  }
+  sync();
+
+  return h(
+    'section',
+    { class: 'inline-menu' },
+    h('p', { class: 'empty' }, 'No halal or seafood dishes labelled on this menu.'),
+    h('h3', { class: 'group-title inline-menu-title' }, 'Full menu', h('span', { class: 'group-count' }, String(featured.length))),
+    listWrap,
+    toggleBtn,
   );
 }
 
@@ -248,19 +307,46 @@ function cardFoot(hall, day, view) {
 
 // ---------- cards ----------
 
+function emptySlotNote(day) {
+  const other = [];
+  for (const [id, label] of visibleSlots(state.date)) {
+    if (id === state.slot) continue;
+    const matching = mealsForSlot(day.meals, id).filter((meal) => meal.items.some((item) => item.featured));
+    if (!matching.length) continue;
+    // Use the hall's own meal name ("Brunch" or "Lunch") when linking to Lunch/Brunch.
+    const linkLabel = id === 'lunch' && matching.length === 1 ? matching[0].name : label;
+    other.push([id, linkLabel]);
+  }
+  const base = `No ${slotLabel().toLowerCase()} menu posted for this day`;
+  if (!other.length) return h('p', { class: 'empty' }, `${base}.`);
+  const links = other.flatMap(([id, label], index) => {
+    const sep = index === 0 ? '' : index === other.length - 1 ? ' and ' : ', ';
+    return [sep, h('button', { class: 'slot-link', type: 'button', onclick: () => update({ slot: id }) }, label)];
+  });
+  return h('p', { class: 'empty' }, `${base} — check under `, ...links, '.');
+}
+
 function showLoading(hall, card) {
   card.replaceChildren(cardHead(hall), h('div', { class: 'skeleton', 'aria-label': 'Loading menu' }, h('span'), h('span'), h('span')));
 }
 
 function fillCard(hall, card, day) {
   const view = buildView(day, state.slot);
+  const hasSlotMeals = day.status === 'ok' && view.entries.some((e) => e.item.featured) ? 1 : 0;
+  const hasDayMeals = day.status === 'ok' && day.meals.some((meal) => meal.items.some((item) => item.featured)) ? 1 : 0;
   counts.set(hall.id, view.halal.length);
+  ranks.set(hall.id, {
+    options: view.halal.length + view.seafood.length,
+    halal: view.halal.length,
+    hasSlotMeals,
+    hasDayMeals,
+  });
   const parts = [cardHead(hall)];
 
   if (day.status !== 'ok') {
     parts.push(h('p', { class: 'empty' }, day.message));
   } else if (!view.meals.length) {
-    parts.push(hoursList(day, view), h('p', { class: 'empty' }, `No ${slotLabel().toLowerCase()} menu posted for this day.`));
+    parts.push(hoursList(day, view), emptySlotNote(day));
   } else {
     parts.push(hoursList(day, view));
     if (day.source.kind === '5cmenu') {
@@ -268,28 +354,52 @@ function fillCard(hall, card, day) {
         h('p', { class: 'notice' }, 'Showing a third-party copy because this hall’s own menu did not load. Only dishes with “halal” in the name can appear, and seafood is matched by name.'),
       );
     }
-    parts.push(
-      group('halal', 'Halal', view.halal, view.standing.halal, 'None labelled halal on this menu.', hall, day),
-      group('seafood', 'Seafood', view.seafood, view.standing.seafood, 'No seafood dishes on today’s menu.', hall, day),
-      fullMenu(hall, day, view),
-    );
+    if (!view.halal.length && !view.seafood.length) {
+      parts.push(inlineFullMenu(hall, day, view));
+    } else {
+      parts.push(
+        group('halal', 'Halal', view.halal, 'None labelled halal on this menu.', hall, day),
+        group('seafood', 'Seafood', view.seafood, 'No seafood dishes on today’s menu.', hall, day),
+        fullMenu(hall, day, view),
+      );
+    }
   }
   parts.push(cardFoot(hall, day, view));
   card.replaceChildren(...parts.filter(Boolean));
 }
 
+function sortedHalls() {
+  const zero = { options: -1, halal: -1, hasSlotMeals: -1, hasDayMeals: -1 };
+  return [...HALLS].sort((a, b) => {
+    const ra = ranks.get(a.id) ?? zero;
+    const rb = ranks.get(b.id) ?? zero;
+    return (
+      rb.options - ra.options ||
+      rb.halal - ra.halal ||
+      rb.hasSlotMeals - ra.hasSlotMeals ||
+      rb.hasDayMeals - ra.hasDayMeals
+    );
+  });
+}
+
+function sortCards() {
+  $('halls').append(...sortedHalls().map((hall) => cards.get(hall.id)));
+}
+
 function renderSummary() {
-  const withHalal = HALLS.filter((hall) => counts.get(hall.id) > 0);
+  const ordered = sortedHalls();
+  const withHalal = ordered.filter((hall) => counts.get(hall.id) > 0);
   const pending = HALLS.some((hall) => !counts.has(hall.id));
   const status = pending ? 'loading menus…' : withHalal.length ? '' : 'no hall has a dish labelled halal for this meal.';
   $('summary').replaceChildren(
     h('span', { class: 'summary-label' }, `Halal at ${slotLabel().toLowerCase()}:`),
-    ...withHalal.map((hall) => h('a', { class: 'jump', href: `#hall-${hall.id}` }, hall.name, h('b', {}, String(counts.get(hall.id))))),
+    ...withHalal.map((hall) => h('a', { class: 'jump', 'data-hall': hall.id, href: `#hall-${hall.id}` }, hall.name, h('b', {}, String(counts.get(hall.id))))),
     h('span', { class: 'summary-none' }, status),
   );
 }
 
 function renderControls() {
+  const slots = visibleSlots(state.date);
   $('dates').replaceChildren(
     ...dates.map((date) =>
       h(
@@ -307,13 +417,18 @@ function renderControls() {
     ),
   );
   $('meals').replaceChildren(
-    ...SLOTS.map(([slot, label]) => h('button', { class: 'meal', type: 'button', 'aria-pressed': String(slot === state.slot), onclick: () => update({ slot }) }, label)),
+    ...slots.map(([slot, label]) => h('button', { class: 'meal', type: 'button', 'aria-pressed': String(slot === state.slot), onclick: () => update({ slot }) }, label)),
   );
 }
 
 function render() {
+  if (!visibleSlots(state.date).some(([id]) => id === state.slot)) {
+    state.slot = 'lunch';
+    history.replaceState(null, '', `?date=${state.date}&meal=${state.slot}`);
+  }
   const token = ++renderToken;
   counts.clear();
+  ranks.clear();
   renderControls();
   for (const hall of HALLS) {
     const key = `${hall.id}|${state.date}`;
@@ -326,10 +441,17 @@ function render() {
     loadHallDay(hall, state.date).then((day) => {
       loaded.set(key, day);
       if (token !== renderToken) return;
+      if (!visibleSlots(state.date).some(([id]) => id === state.slot)) {
+        update({ slot: 'lunch' });
+        return;
+      }
+      renderControls();
       fillCard(hall, card, day);
+      sortCards();
       renderSummary();
     });
   }
+  sortCards();
   renderSummary();
 }
 
@@ -539,7 +661,7 @@ $('detail').addEventListener('click', (event) => {
 });
 
 for (const hall of HALLS) {
-  const card = h('section', { class: 'hall', id: `hall-${hall.id}`, 'aria-label': `${hall.name} dining hall` });
+  const card = h('section', { class: 'hall', id: `hall-${hall.id}`, 'data-hall': hall.id, 'aria-label': `${hall.name} dining hall` });
   cards.set(hall.id, card);
   $('halls').append(card);
 }

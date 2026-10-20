@@ -348,20 +348,60 @@ a { color: var(--accent); text-underline-offset: 2px; }
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  padding: 4px 10px;
+  padding: 4px 6px 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--hall-bg, var(--halal)) 42%, var(--line));
   border-radius: 999px;
-  background: var(--halal-soft);
-  color: var(--halal);
+  background: color-mix(in srgb, var(--hall-bg, var(--halal)) 14%, var(--card));
+  color: var(--ink);
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   text-decoration: none;
 }
 
-.jump b { font-variant-numeric: tabular-nums; }
+.jump b {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--hall-dark, var(--halal));
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
 
 .summary-none { color: var(--muted); font-size: 0.92rem; }
 
 /* ---------- hall cards ---------- */
+
+/* 5C Menu (menu.jojodmo.com) college palette per dining hall. */
+[data-hall="frary"],
+[data-hall="frank"] {
+  --hall-bg: rgb(57, 120, 220);
+  --hall-dark: rgb(56, 101, 200);
+  --hall-darker: rgb(56, 93, 185);
+}
+
+[data-hall="collins"] {
+  --hall-bg: rgb(218, 44, 70);
+  --hall-dark: rgb(198, 45, 71);
+  --hall-darker: rgb(182, 45, 72);
+}
+
+[data-hall="malott"] {
+  --hall-bg: rgb(74, 165, 131);
+  --hall-dark: rgb(73, 145, 110);
+  --hall-darker: rgb(65, 130, 95);
+}
+
+[data-hall="mcconnell"] {
+  --hall-bg: rgb(247, 130, 29);
+  --hall-dark: rgb(227, 114, 29);
+  --hall-darker: rgb(212, 106, 29);
+}
+
+[data-hall="hoch"] {
+  --hall-bg: rgb(234, 170, 0);
+  --hall-dark: rgb(214, 151, 0);
+  --hall-darker: rgb(199, 139, 0);
+}
 
 .halls {
   display: grid;
@@ -372,25 +412,51 @@ a { color: var(--accent); text-underline-offset: 2px; }
 }
 
 .hall {
-  background: var(--card);
-  border: 1px solid var(--line);
+  --hall-line: color-mix(in srgb, var(--hall-bg) 22%, var(--line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--hall-bg) 14%, var(--card)) 0%,
+    color-mix(in srgb, var(--hall-bg) 7%, var(--card)) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--hall-bg) 38%, var(--line));
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
   scroll-margin-top: 130px;
 }
 
+:root[data-theme="dark"] .hall {
+  --hall-line: color-mix(in srgb, var(--hall-bg) 26%, var(--line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--hall-bg) 20%, var(--card)) 0%,
+    color-mix(in srgb, var(--hall-bg) 10%, var(--card)) 100%
+  );
+  border-color: color-mix(in srgb, var(--hall-bg) 45%, var(--line));
+}
+
 .hall-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
-  padding: 14px 16px 6px;
+  padding: 13px 16px;
+  background: linear-gradient(135deg, var(--hall-bg), var(--hall-dark));
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 18%);
 }
 
 .hall-head h2 { margin: 0; font: 600 1.3rem/1.2 var(--serif); }
 
-.hall-college { color: var(--muted); font-size: 0.88rem; white-space: nowrap; }
+.hall-college {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 18%);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
 
 /* Serving hours for the meal on show (bold) and the ones that run into it. */
 .hours {
@@ -398,7 +464,9 @@ a { color: var(--accent); text-underline-offset: 2px; }
   grid-template-columns: auto 1fr;
   gap: 2px 14px;
   margin: 0;
-  padding: 0 16px 2px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--hall-bg) 18%, var(--card));
+  border-bottom: 1px solid var(--hall-line);
   color: var(--muted);
   font-size: 0.86rem;
 }
@@ -448,7 +516,18 @@ a { color: var(--accent); text-underline-offset: 2px; }
 
 .group-count { color: var(--muted); font-weight: 600; letter-spacing: 0; }
 
-.empty { margin: 0; padding: 2px 16px 4px; color: var(--muted); font-size: 0.92rem; }
+.empty { margin: 0; padding: 10px 16px 4px; color: var(--muted); font-size: 0.92rem; }
+
+.slot-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
 
 /* Dishes from a hall's every-day list, kept apart from the day's menu. */
 .standing > summary { padding: 6px 16px; color: var(--muted); font-size: 0.86rem; cursor: pointer; }
@@ -466,7 +545,7 @@ a { color: var(--accent); text-underline-offset: 2px; }
   width: 100%;
   padding: 9px 16px;
   border: 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hall-line, var(--line));
   background: none;
   text-align: left;
   cursor: pointer;
@@ -481,6 +560,8 @@ a { color: var(--accent); text-underline-offset: 2px; }
 }
 
 .item-main { flex: 1; min-width: 0; display: grid; gap: 3px; }
+
+.item-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
 
 .item-name { font-weight: 600; text-wrap: pretty; }
 
@@ -510,7 +591,7 @@ a { color: var(--accent); text-underline-offset: 2px; }
 
 /* ---------- full menu ---------- */
 
-.rest { margin-top: 12px; border-top: 1px solid var(--line); }
+.rest { margin-top: 12px; border-top: 1px solid var(--hall-line, var(--line)); }
 
 .rest > summary {
   padding: 11px 16px;
@@ -536,6 +617,28 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .rest .item-name { font-weight: 500; font-size: 0.94rem; }
 .rest-note { margin: 8px 0 0; padding: 0 16px 12px; color: var(--muted); font-size: 0.84rem; }
 
+.inline-menu { margin-top: 6px; }
+.inline-menu-title { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hall-line, var(--line)); color: var(--ink); }
+.inline-stations .item { padding-block: 6px; border-top: 0; }
+.inline-stations .item-name { font-weight: 500; font-size: 0.94rem; }
+
+.more-dishes {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 8px 16px 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--hall-line, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hall-bg) 14%, var(--card));
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.more-dishes:hover { background: color-mix(in srgb, var(--hall-bg) 22%, var(--card)); }
+
 .hall-foot {
   display: flex;
   flex-wrap: wrap;
@@ -543,7 +646,8 @@ a { color: var(--accent); text-underline-offset: 2px; }
   gap: 4px 12px;
   margin-top: 12px;
   padding: 10px 16px 12px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hall-line, var(--line));
+  background: color-mix(in srgb, var(--hall-bg) 12%, var(--card));
   color: var(--muted);
   font-size: 0.82rem;
 }
@@ -805,7 +909,7 @@ mark.good { background: var(--halal-soft); color: var(--halal); }
   .date small { font-size: 0.62rem; letter-spacing: 0.03em; }
 
   .meals { display: flex; width: 100%; }
-  .meal { flex: 1; padding-block: 10px; }
+  .meal { flex: 1; padding: 9px 8px; font-size: 0.92rem; }
 
   .summary { margin: 14px 0 12px; }
   .halls { gap: 14px; }

@@ -129,10 +129,20 @@ has names and descriptions only. The card says when this happens.
 
 ## The page, as the owner asked for it
 
-- Day chips for today plus six days, and Breakfast / Lunch / Dinner tabs. Brunch
-  shows under Lunch, and under Breakfast when a hall has no breakfast.
-- Each hall card: serving hours, then Halal, Seafood, the full menu (Specials
-  only for Bon Appétit), and the source and its age.
+- Day chips for today plus six days, and Breakfast / Lunch/Brunch / Dinner
+  tabs. On weekends (or any day no hall posts a breakfast menu), the Breakfast
+  tab is omitted. When a hall has no menu for the chosen meal, the card points
+  to the meals it did list for that day (for example, "check under Brunch and
+  Dinner").
+- Hall cards are ordered dynamically for the chosen meal: first by total halal
+  and seafood dishes (breaking ties by halal count), then by whether the hall
+  serves that meal period, and finally by whether it has any meals posted that
+  day at all.
+- Each hall card uses its 5C Menu (`menu.jojodmo.com`) college colour as its
+  header and tinted background, and shows serving hours, then Halal, Seafood,
+  the full menu (Specials only for Bon Appétit), and the source and its age.
+  When a meal has neither halal nor seafood dishes on the daily menu, the full
+  menu opens inline showing the first 4 dishes with a button to expand the rest.
   - On the Dinner tab only the dinner time shows.
   - On Breakfast and Lunch, the daytime meals (breakfast, continental, brunch,
     lunch, continuous service) show together, with the selected one in bold.

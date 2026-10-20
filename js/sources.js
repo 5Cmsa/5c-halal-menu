@@ -106,9 +106,20 @@ export function indexPomonaFeed(feed) {
     for (const recipe of asArray(menu.recipes?.recipe)) {
       const item = pomonaItem(recipe);
       const key = `${item.station}|${item.id}`;
-      if (!item.name || meal.seen.has(key)) continue;
+      // Pomona posts a placeholder item ("Closed for Breakfast Today") when a meal is closed.
+      if (!item.name || /^closed\b/i.test(item.name) || meal.seen.has(key)) continue;
       meal.seen.add(key);
       meal.items.push(item);
+    }
+    if (!meal.items.length) meals.delete(mealName);
+  }
+  // On weekends Frary serves brunch and dinner, but Eatec still labels the
+  // daytime menu "Breakfast" after the Monday template.
+  for (const meals of days.values()) {
+    if (meals.has('Breakfast') && !meals.has('Lunch') && !meals.has('Brunch')) {
+      const meal = meals.get('Breakfast');
+      meals.delete('Breakfast');
+      meals.set('Brunch', { ...meal, name: 'Brunch', slot: 'brunch' });
     }
   }
   return days;
