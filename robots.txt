@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://5cmsa.github.io/5c-halal-menu/sitemap.xml
