@@ -15,7 +15,7 @@ import path from 'node:path';
 import { classify } from '../js/classify.js';
 import { HALLS } from '../js/halls.js';
 import { indexPomonaFeed, mealsFromFile } from '../js/sources.js';
-import { BON_APPETIT, DATA_DIR, SODEXO, addDays, fetchPage, parseBonAppetit, parseSodexoWeek, sleep, today } from './scrape.mjs';
+import { BON_APPETIT, DATA_DIR, SODEXO, addDays, fetchPage, fetchSodexoDay, parseBonAppetit, sleep, today } from './scrape.mjs';
 
 const FILE = path.join(DATA_DIR, 'history.json');
 const KEEP_DAYS = 200; // a little more than the six months the chart shows
@@ -102,21 +102,15 @@ async function backfill(history, from, until) {
 
   for (const hall of SODEXO) {
     const days = (history.halls[hall.id] ??= {});
-    for (let cursor = from; cursor < until; ) {
-      let next = addDays(cursor, 7);
+    for (let date = from; date < until; date = addDays(date, 1)) {
+      if (days[date]) continue;
       try {
-        const parsed = parseSodexoWeek((await fetchPage(hall.weekUrl(cursor))).text);
-        const covered = Object.keys(parsed.days).sort();
-        for (const date of covered) {
-          if (date < from || date >= until || days[date]) continue;
-          days[date] = tally(mealsFromFile(parsed, date));
-          console.log(`  ${hall.id} ${date}: ${JSON.stringify(days[date])}`);
-        }
-        if (covered.length && covered.at(-1) >= cursor) next = addDays(covered.at(-1), 1);
+        const parsed = await fetchSodexoDay(hall, date);
+        days[date] = tally(mealsFromFile({ days: { [date]: { meals: parsed.meals } }, items: parsed.items }, date));
+        console.log(`  ${hall.id} ${date}: ${JSON.stringify(days[date])}`);
       } catch (err) {
-        console.warn(`  ${hall.id} week of ${cursor}: skipped (${err.message})`);
+        console.warn(`  ${hall.id} ${date}: skipped (${err.message})`);
       }
-      cursor = next;
       await sleep(PAUSE_MS);
     }
   }

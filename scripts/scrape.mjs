@@ -26,10 +26,11 @@ export const BON_APPETIT = [
 export const SODEXO = [
   {
     id: 'hoch',
-    weekUrl: (date) => {
-      const [y, m, d] = date.split('-');
-      return `https://menus.sodexomyway.com/BiteMenu/MenuOnly?menuId=15258&locationId=13147001&startdate=${m}/${d}/${y}`;
-    },
+    home: 'https://hmc.sodexomyway.com/en-us/locations/hoch-shanahan-dining-commons',
+    apiUrl: 'https://api-prd.sodexomyway.net/v0.2/data/menu',
+    apiKey: '68717828-b754-420d-9488-4c37cb7d7ef7',
+    locationId: '13147001',
+    menuId: '15258',
   },
 ];
 
@@ -54,12 +55,12 @@ export function addDays(date, n) {
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
-export async function fetchPage(url, accept = 'text/html,application/xhtml+xml') {
+export async function fetchPage(url, accept = 'text/html,application/xhtml+xml', extraHeaders = {}) {
   let lastError;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT, Accept: accept },
+        headers: { 'User-Agent': USER_AGENT, Accept: accept, ...extraHeaders },
         signal: AbortSignal.timeout(60_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -202,95 +203,129 @@ async function scrapeBonAppetit(hall, dates) {
 
 // ---------- Sodexo ----------
 
-export function parseSodexoWeek(html) {
-  const open = /<div[^>]*id=['"]nutData['"][^>]*>/.exec(html);
-  if (!open) throw new Error('menu data not found in page');
-  const start = open.index + open[0].length;
-  const week = JSON.parse(decodeEntities(html.slice(start, html.indexOf('</div>', start))));
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  const days = {};
-  const items = {};
-  for (const day of week) {
-    const date = String(day.date).slice(0, 10);
-    const meals = [];
-    for (const part of day.dayParts ?? []) {
-      const stations = [];
-      let startTime = null;
-      let endTime = null;
-      for (const course of part.courses ?? []) {
-        const ids = [];
-        for (const raw of course.menuItems ?? []) {
-          const name = clean(raw.formalName);
-          // Sodexo pads empty stations with a placeholder card.
-          if (!name || /^have a nice day$/i.test(name)) continue;
-          const id = String(raw.foodItemId ?? raw.menuItemId);
-          const allergens = (raw.allergens ?? []).filter((a) => String(a.contains) === 'true').map((a) => a.name);
-          const ingredients = clean(raw.biteMenuItemSizes?.[0]?.ingredients);
-          const calories = Number(raw.calories);
-          items[id] ??= {
-            id,
-            name,
-            description: clean(raw.description),
-            featured: true,
-            vegetarian: Boolean(raw.isVegetarian || raw.isVegan),
-            vegan: Boolean(raw.isVegan),
-            halalFlag: null,
-            dietary: [
-              ['Vegan', raw.isVegan ? 'Yes' : 'No'],
-              ['Vegetarian', raw.isVegetarian ? 'Yes' : 'No'],
-              ['Mindful', raw.isMindful ? 'Yes' : 'No'],
-            ],
-            labels: [],
-            allergens,
-            allergenInfo: allergens.length > 0 || ingredients.length > 0,
-            ingredients,
-            calories: Number.isFinite(calories) && calories > 0 ? calories : null,
-            portion: clean(raw.portion),
-          };
-          ids.push(id);
-          startTime ??= raw.startTime ? String(raw.startTime).slice(11, 16) : null;
-          endTime ??= raw.endTime ? String(raw.endTime).slice(11, 16) : null;
-        }
-        if (ids.length) stations.push({ name: titleCase(course.courseName), items: [...new Set(ids)] });
-      }
-      if (stations.length) meals.push({ name: titleCase(part.dayPartName), start: startTime, end: endTime, stations });
+function sodexoClock(time) {
+  if (!time?.hour) return null;
+  const h = Number(time.hour) % 12 + (String(time.period).toUpperCase() === 'PM' ? 12 : 0);
+  return `${String(h).padStart(2, '0')}:${String(time.minute ?? '00').padStart(2, '0')}`;
+}
+
+function parseSodexoHome(html, fallback) {
+  const state = assigned(html, /window\.__PRELOADED_STATE__\s*=\s*/);
+  const regions = state?.composition?.subject?.regions ?? [];
+  const meta = regions.find((r) => r.id === 'menus')?.fragments?.[0]?.content?.metadata;
+  const openingHours = regions.find((r) => r.id === 'body')?.fragments?.[0]?.content?.main?.openingHours;
+  return {
+    locationId: String(meta?.locationId || fallback.locationId),
+    menuId: String(meta?.menuId || fallback.menuId),
+    openingHours,
+  };
+}
+
+function sodexoHoursForDate(openingHours, date) {
+  const dayName = DAY_NAMES[new Date(`${date}T12:00:00Z`).getUTCDay()];
+  const seasonal = (openingHours?.seasonalHours ?? []).find(
+    (s) => s.from?.slice(0, 10) <= date && date <= s.to?.slice(0, 10),
+  );
+  const rules = seasonal?.openingHours ?? openingHours?.standardHours ?? [];
+  const rule = rules.find((r) => (r.days ?? []).includes(dayName));
+  const map = new Map();
+  for (const row of rule?.hours ?? []) {
+    if (row.label && row.startTime && row.finishTime) {
+      map.set(row.label.toLowerCase(), { start: sodexoClock(row.startTime), end: sodexoClock(row.finishTime) });
     }
-    days[date] = { meals };
   }
-  return { days, items };
+  return map;
+}
+
+const DEFAULT_SODEXO_HOURS = {
+  breakfast: { start: '07:30', end: '09:30' },
+  brunch: { start: '10:30', end: '12:45' },
+  lunch: { start: '10:30', end: '12:45' },
+  dinner: { start: '17:00', end: '19:00' },
+};
+
+export function parseSodexoDay(sections, hoursMap = new Map()) {
+  const meals = [];
+  const items = {};
+  for (const section of Array.isArray(sections) ? sections : []) {
+    const stations = [];
+    for (const group of section.groups ?? []) {
+      const ids = [];
+      for (const raw of group.items ?? []) {
+        const name = clean(raw.formalName);
+        // Sodexo pads empty stations with a placeholder card.
+        if (!name || /^have a nice day$/i.test(name)) continue;
+        const id = String(raw.foodItemId ?? raw.menuItemId);
+        const allergens = (raw.allergens ?? []).filter((a) => String(a.contains) === 'true').map((a) => a.name);
+        const ingredients = clean(raw.ingredients ?? raw.biteMenuItemSizes?.[0]?.ingredients);
+        const calories = Number(raw.calories);
+        items[id] ??= {
+          id,
+          name,
+          description: clean(raw.description),
+          featured: true,
+          vegetarian: Boolean(raw.isVegetarian || raw.isVegan),
+          vegan: Boolean(raw.isVegan),
+          halalFlag: null,
+          dietary: [
+            ['Vegan', raw.isVegan ? 'Yes' : 'No'],
+            ['Vegetarian', raw.isVegetarian ? 'Yes' : 'No'],
+            ['Mindful', raw.isMindful ? 'Yes' : 'No'],
+          ],
+          labels: [],
+          allergens,
+          allergenInfo: allergens.length > 0 || ingredients.length > 0,
+          ingredients,
+          calories: Number.isFinite(calories) && calories > 0 ? calories : null,
+          portion: clean(raw.portion),
+        };
+        ids.push(id);
+      }
+      if (ids.length) stations.push({ name: titleCase(group.name), items: [...new Set(ids)] });
+    }
+    if (stations.length) {
+      const mealName = titleCase(section.name);
+      const times = hoursMap.get(mealName.toLowerCase()) ?? DEFAULT_SODEXO_HOURS[mealName.toLowerCase()] ?? { start: null, end: null };
+      meals.push({ name: mealName, start: times.start, end: times.end, stations });
+    }
+  }
+  return { meals, items };
+}
+
+export async function fetchSodexoDay(hall, date, config = hall) {
+  const url = `${hall.apiUrl}/${config.locationId}/${config.menuId}?date=${date}`;
+  const { text } = await fetchPage(url, 'application/json', { 'API-Key': hall.apiKey });
+  const hoursMap = config.openingHours ? sodexoHoursForDate(config.openingHours, date) : new Map();
+  return parseSodexoDay(JSON.parse(text), hoursMap);
 }
 
 async function scrapeSodexo(hall, dates) {
   const days = {};
   const items = {};
   const errors = [];
-  const wanted = new Set(dates);
-  let cursor = dates[0];
-  // Each page holds one Sunday-to-Saturday week, so a 7-day window needs up to two.
-  for (let page = 0; page < 3 && cursor <= dates.at(-1); page++) {
-    const url = hall.weekUrl(cursor);
+  let config = { locationId: hall.locationId, menuId: hall.menuId, openingHours: null };
+  try {
+    const { text } = await fetchPage(hall.home);
+    config = parseSodexoHome(text, hall);
+  } catch (err) {
+    console.warn(`  ${hall.id} home page: FAILED ${err.message}, using default ids`);
+  }
+  for (const date of dates) {
     try {
-      const { text } = await fetchPage(url);
-      const parsed = parseSodexoWeek(text);
+      const parsed = await fetchSodexoDay(hall, date, config);
       Object.assign(items, parsed.items);
-      const fetchedAt = new Date().toISOString();
-      const covered = Object.keys(parsed.days).sort();
-      for (const date of covered) {
-        // Asking for a date opens the page with that day's tab selected.
-        if (wanted.has(date)) days[date] = { url: hall.weekUrl(date), fetchedAt, meals: parsed.days[date].meals };
-      }
-      console.log(`  ${hall.id} week of ${cursor}: ${covered.length} days`);
-      const last = covered.at(-1);
-      cursor = last && last >= cursor ? addDays(last, 1) : addDays(cursor, 7);
+      days[date] = { url: `${hall.home}#menuItems`, fetchedAt: new Date().toISOString(), meals: parsed.meals };
+      console.log(`  ${hall.id} ${date}: ${parsed.meals.length} meals`);
     } catch (err) {
-      errors.push(`week of ${cursor}: ${err.message}`);
-      console.warn(`  ${hall.id} week of ${cursor}: FAILED ${err.message}`);
-      cursor = addDays(cursor, 7);
+      errors.push(`${date}: ${err.message}`);
+      console.warn(`  ${hall.id} ${date}: FAILED ${err.message}`);
     }
     await sleep(PAUSE_MS);
   }
   return {
-    source: { kind: 'sodexo', home: 'https://hmc.sodexomyway.com/en-us/locations/hoch-shanahan-dining-commons' },
+    source: { kind: 'sodexo', home: hall.home },
     days,
     items,
     errors,

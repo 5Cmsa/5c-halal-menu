@@ -2,7 +2,7 @@
 // tried on the network first, and the last good answer is kept, so offline
 // the page opens with the most recent menus this device loaded.
 
-const CACHE = 'menu-v2';
+const CACHE = 'menu-v3';
 const WAIT_FOR_NETWORK_MS = 6000;
 
 // Fetched when the app is installed, so the first offline launch works.

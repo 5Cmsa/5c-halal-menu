@@ -6,10 +6,12 @@ const HALAL = /\bhalal\b/i;
 const NOT_HALAL = /\b(?:non|not)[\s-]*halal\b/gi;
 
 // Phrases that contain a seafood word without the dish being seafood.
-const SEAFOOD_NOISE = /\b(?:swedish fish|gold ?fish|fish[- ]free|fish sauce|oyster sauce|oyster (?:mushrooms?|crackers?)|sushi rice|poke cake|crab ?apples?)\b/gi;
+const SEAFOOD_NOISE = /\b(?:swedish fish|gold ?fish|fish[- ]free|fish sauce|oyster sauce|oyster (?:mushrooms?|crackers?|juice|extract)|sushi rice|poke cake|crab ?apples?)\b/gi;
 const FISH = /\b(?:fish|salmon|lox|tuna|ahi|cod|tilapia|pollock|mahi|halibut|trout|catfish|swai|bass|snapper|sole|haddock|flounder|swordfish|sardines?|anchov(?:y|ies)|mackerel|herring|unagi|surimi)\b/i;
 const SHELLFISH = /\b(?:shrimp|prawns?|crab|lobster|clams?|mussels?|oysters?|scallops?|calamari|squid|octopus|crawfish|crayfish|gambas)\b/i;
-const SEAFOOD_DISH = /\b(?:seafood|poke|sushi|sashimi|nigiri|maki|ceviche|cioppino|california rolls?)\b/i;
+const SEAFOOD_DISH = /\b(?:seafood|poke|sushi|sashimi|nigiri|maki|ceviche|cioppino|california rolls?|surf\s*(?:n|&|and|['’]n['’]?)\s*turf)\b/i;
+const ING_FISH = /\b(?:salmon|lox|tuna|ahi|cod|tilapia|pollock|mahi|halibut|trout|catfish|swai|bass|snapper|sole|haddock|flounder|swordfish|sardines?|mackerel|herring|unagi|surimi)\b/i;
+const ING_SHELLFISH = /\b(?:shrimp|prawns?|crab|lobster|clams?|mussels?|scallops?|calamari|squid|octopus|crawfish|crayfish|gambas)\b/i;
 
 // "Turkey bacon" and "soy chorizo" are not pork; drop them before looking.
 const PORK_NOISE = /\b(?:turkey|beef|chicken|halal|vegan|veggie|vegetarian|plant[- ]based|soy|tofu|tempeh|mushroom|coconut|carrot|eggplant|seitan|beyond|impossible)\s+(?:breakfast\s+)?(?:bacon|ham|pepperoni|chorizo|salami|sausage)\b/gi;
@@ -63,13 +65,15 @@ function seafoodReason(item) {
   // "Tofu fish filet" and vegan sushi carry the hall's vegetarian mark.
   if (item.vegetarian === true || item.vegan === true) return null;
   const text = `${item.name} ${item.description ?? ''}`.replace(SEAFOOD_NOISE, ' ');
-  const fishWord = FISH.test(text);
-  const shellfishWord = SHELLFISH.test(text);
-  if (!fishWord && !shellfishWord && !SEAFOOD_DISH.test(text)) return null;
-
+  const ing = (item.ingredients ?? '').replace(SEAFOOD_NOISE, ' ');
   const taggedFish = (item.allergens ?? []).some((a) => FISH_ALLERGENS.test(a));
   const taggedShellfish = (item.allergens ?? []).some((a) => SHELLFISH_ALLERGENS.test(a));
   const tagged = taggedFish || taggedShellfish;
+
+  const fishWord = FISH.test(text) || (tagged && ING_FISH.test(ing));
+  const shellfishWord = SHELLFISH.test(text) || (tagged && ING_SHELLFISH.test(ing));
+  if (!fishWord && !shellfishWord && !SEAFOOD_DISH.test(text)) return null;
+
   // Where the hall publishes allergens, a seafood word without a fish or
   // shellfish tag is a false match (a garnish, a brand name), so skip it.
   if (item.allergenInfo && !tagged) return null;

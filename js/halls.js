@@ -1,11 +1,6 @@
 // The six dining halls, where each one's menu comes from, and the page a
 // person would open to check it themselves.
 
-const sodexoWeek = (date) => {
-  const [y, m, d] = date.split('-');
-  return `https://menus.sodexomyway.com/BiteMenu/MenuOnly?menuId=15258&locationId=13147001&startdate=${m}/${d}/${y}`;
-};
-
 export const HALLS = [
   {
     id: 'frary',
@@ -55,7 +50,7 @@ export const HALLS = [
     name: 'Hoch-Shanahan',
     college: 'Harvey Mudd',
     primary: 'scraped',
-    originalUrl: sodexoWeek,
+    originalUrl: () => 'https://hmc.sodexomyway.com/en-us/locations/hoch-shanahan-dining-commons#menuItems',
   },
 ];
 

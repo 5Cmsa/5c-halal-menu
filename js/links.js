@@ -62,21 +62,22 @@ const SITES = {
     },
   },
 
-  // The link selects the day, but each meal is a collapsed section the page
-  // gives no way to open from a link.
+  // Opens the HMC dining commons page at the menu section; each meal is a
+  // collapsed section the page gives no way to open from a link.
   sodexo: {
-    link({ day }) {
-      return day.source.url;
+    link({ hall, date }) {
+      return hall.originalUrl(date);
     },
-    where({ meal, item }) {
-      return `tap ${meal.name.toUpperCase()} to open it${item.station ? `, then look under ${item.station.toUpperCase()}` : ''}`;
+    where({ date, meal, item }) {
+      const pick = date === claremontNow().date ? '' : `pick ${new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }).format(new Date(`${date}T12:00:00Z`))} in the calendar, then `;
+      return `${pick}tap ${meal.name.toUpperCase()} to open it${item.station ? `, then look under ${item.station.toUpperCase()}` : ''}`;
     },
   },
 };
 
 // `meal` and `entry` are optional: without them the link goes to the day.
 export function menuLink(hall, day, date, meal, entry) {
-  return SITES[hall.site].link({ day, date, meal, entry });
+  return SITES[hall.site].link({ hall, day, date, meal, entry });
 }
 
 export function whereOnPage(hall, day, date, meal, item) {

@@ -99,12 +99,14 @@ Six halls. Oldenborg (Pomona) was removed on purpose: it is closed for a while.
   Treating it as an empty day would be cleaner.
 
 ### Sodexo: Hoch-Shanahan (Harvey Mudd) (`site: 'sodexo'`)
-- `https://menus.sodexomyway.com/BiteMenu/MenuOnly?menuId=15258&locationId=13147001&startdate=MM/DD/YYYY`
-  holds a Sunday–Saturday week as HTML-escaped JSON in `<div id="nutData">`.
-  `startdate` also picks which day tab is open. `menuId` may change between
-  semesters; if Hoch starts failing, check it first.
-- Ingredients are in `biteMenuItemSizes[0].ingredients`. Halal appears only in
-  dish names or ingredient lists ("Halal Boneless Chicken Thighs").
+- `https://hmc.sodexomyway.com/en-us/locations/hoch-shanahan-dining-commons`
+  embeds `window.__PRELOADED_STATE__` with `locationId` (`13147001`), `menuId`
+  (`15258`), and weekly/seasonal `openingHours`. Each day's menu is fetched from
+  `https://api-prd.sodexomyway.net/v0.2/data/menu/<locationId>/<menuId>?date=YYYY-MM-DD`.
+  Sodexo's older `menus.sodexomyway.com/BiteMenu/MenuOnly` endpoint now returns
+  HTTP 502.
+- Ingredients are in `item.ingredients`. Halal appears only in dish names or
+  ingredient lists ("Halal Boneless Chicken Thighs", "Halal Gyro Slices").
 - Empty stations contain a placeholder dish called "Have A Nice Day"; it is skipped.
 
 ### Fallback
