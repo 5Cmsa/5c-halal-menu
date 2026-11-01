@@ -257,7 +257,9 @@ export function parseSodexoDay(sections, hoursMap = new Map()) {
         const name = clean(raw.formalName);
         // Sodexo pads empty stations with a placeholder card.
         if (!name || /^have a nice day$/i.test(name)) continue;
-        const id = String(raw.foodItemId ?? raw.menuItemId);
+        // Sodexo sometimes sends 0 for its ids, which would merge every dish
+        // into one, so a zero id falls through to the dish's own details.
+        const id = String(raw.foodItemId || raw.menuItemId || `${name}|${clean(raw.portion)}|${raw.calories ?? ''}`);
         const allergens = (raw.allergens ?? []).filter((a) => String(a.contains) === 'true').map((a) => a.name);
         const ingredients = clean(raw.ingredients ?? raw.biteMenuItemSizes?.[0]?.ingredients);
         const calories = Number(raw.calories);
@@ -294,11 +296,19 @@ export function parseSodexoDay(sections, hoursMap = new Map()) {
   return { meals, items };
 }
 
+// A real day has dozens of dishes. Far fewer means the source sent something
+// broken; treating that as a failed fetch keeps the last good copy, or lets the
+// page fall back to the 5C Menu API, instead of showing a nearly empty menu.
+const MIN_SODEXO_DISHES = 5;
+
 export async function fetchSodexoDay(hall, date, config = hall) {
   const url = `${hall.apiUrl}/${config.locationId}/${config.menuId}?date=${date}`;
   const { text } = await fetchPage(url, 'application/json', { 'API-Key': hall.apiKey });
   const hoursMap = config.openingHours ? sodexoHoursForDate(config.openingHours, date) : new Map();
-  return parseSodexoDay(JSON.parse(text), hoursMap);
+  const parsed = parseSodexoDay(JSON.parse(text), hoursMap);
+  const dishes = new Set(parsed.meals.flatMap((meal) => meal.stations.flatMap((station) => station.items)));
+  if (dishes.size < MIN_SODEXO_DISHES) throw new Error(`only ${dishes.size} distinct dishes`);
+  return parsed;
 }
 
 async function scrapeSodexo(hall, dates) {

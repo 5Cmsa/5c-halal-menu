@@ -99,6 +99,17 @@ Six halls. Oldenborg (Pomona) was removed on purpose: it is closed for a while.
   Treating it as an empty day would be cleaner.
 
 ### Sodexo: Hoch-Shanahan (Harvey Mudd) (`site: 'sodexo'`)
+- **On 2026-11-01 Hoch's page switched from menu `15258` to `1411281`.** Both
+  still answer on the API. `1411281` is what students see on the page; its dishes
+  have zero ids and no halal wording ("Shawarma Chicken Breast"). `15258` is what
+  the 5C Menu API shows, with real ids and labels ("Halal Grilled Chicken
+  Shawarma"). The scraper follows the page's id; the default in `SODEXO`, used by
+  `--backfill`, is still `15258`. Nobody has confirmed why the labels went away
+  or which menu the kitchen follows, so ask dining staff before treating either
+  as proof a dish is or isn't halal.
+- Zero ids fall through to a key built from the dish's own details, and a day with
+  fewer than 5 distinct dishes counts as a failed fetch, so the last good copy or
+  the 5C Menu fallback is used.
 - `https://hmc.sodexomyway.com/en-us/locations/hoch-shanahan-dining-commons`
   embeds `window.__PRELOADED_STATE__` with `locationId` (`13147001`), `menuId`
   (`15258`), and weekly/seasonal `openingHours`. Each day's menu is fetched from
