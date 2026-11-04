@@ -4,6 +4,7 @@ import { hadithOfTheDay } from './hadith.js';
 import { h } from './dom.js';
 import { menuLink, whereOnPage } from './links.js';
 import { renderStats } from './stats.js';
+import { showEvents } from './events.js';
 import { classify } from './classify.js';
 
 const TIME_ZONE = 'America/Los_Angeles';
@@ -670,4 +671,5 @@ setUpOffline();
 setUpInstallHint();
 render();
 renderHadith();
+showEvents($('events'));
 renderStats($('stats'), today);

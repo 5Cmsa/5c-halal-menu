@@ -151,6 +151,63 @@ a { color: var(--accent); text-underline-offset: 2px; }
   overflow: hidden;
 }
 
+/* ---------- MSA event cards ---------- */
+
+.events { display: grid; gap: 12px; margin-bottom: 18px; }
+
+.event {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.event-art { flex: none; width: 112px; height: auto; }
+.event-text { min-width: 0; }
+
+.event-label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  color: var(--gold);
+  font: 700 0.68rem/1.2 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.event-label .star { width: 8px; height: 8px; }
+.event-title { margin: 4px 0 2px; font: 600 1.25rem/1.2 var(--serif); text-wrap: balance; }
+.event-when { margin: 0; font-weight: 650; }
+.nowrap { white-space: nowrap; }
+.event-note { margin: 2px 0 0; color: var(--muted); font-size: 0.9rem; text-wrap: pretty; }
+
+/* The illustration: an arcade cabinet, two pins and a ball. */
+.art-floor { stroke: var(--line); stroke-width: 2; stroke-linecap: round; }
+.art-cabinet { fill: var(--cobalt); }
+.art-marquee, .art-gold { fill: var(--gold); }
+.art-screen { fill: #0d1b33; }
+.art-glow { fill: #5fd6db; }
+.art-deck { fill: var(--turquoise); }
+.art-stick { stroke: #3a4252; stroke-width: 2.6; stroke-linecap: round; }
+.art-coral { fill: #d9523c; }
+.art-door { fill: none; stroke: color-mix(in srgb, var(--card) 55%, transparent); stroke-width: 1.6; }
+.art-slot { stroke: var(--gold); stroke-width: 1.6; stroke-linecap: round; }
+.art-pin { fill: #fdfbf6; stroke: #c9c2b2; stroke-width: 1.2; }
+.art-pin-back { fill: #efe9dc; }
+.art-stripe { stroke: #d9523c; stroke-width: 2.2; }
+.art-ball { fill: var(--cobalt); }
+.art-hole { fill: #0d1b33; }
+
+:root[data-theme="dark"] .art-cabinet,
+:root[data-theme="dark"] .art-ball { fill: #3f6fc0; }
+:root[data-theme="dark"] .art-pin { stroke: #8a8475; }
+
 /* Star lattice fading in from both sides, and a fine gold rule inside the
    edge like the ruled frame of a manuscript page. */
 .hadith::before,
@@ -880,6 +937,9 @@ mark.good { background: var(--halal-soft); color: var(--halal); }
 /* ---------- phones ---------- */
 
 @media (max-width: 560px) {
+  .event { gap: 12px; padding: 12px 14px; }
+  .event-art { width: 72px; }
+  .event-title { font-size: 1.1rem; }
   .masthead { padding: 16px 0 12px; }
   .brand { gap: 12px; }
   .emblem { width: 48px; height: 48px; }

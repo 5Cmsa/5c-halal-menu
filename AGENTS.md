@@ -194,6 +194,17 @@ has names and descriptions only. The card says when this happens.
   and fonts. When offline, the page shows a note and Pomona sources say "saved
   copy". Users must have visited once online.
 
+## MSA event cards (`js/events.js`)
+
+- Each event is an `<article class="event">` in `index.html`, under the hadith,
+  with `data-start` and `data-end` as Pacific `YYYY-MM-DDTHH:MM`. It hides itself
+  once `data-end` passes, and the section hides when no event is left.
+- `[data-when]` is replaced with "Tonight", "Tomorrow", "This Friday, Nov 6" or
+  "Happening now".
+- To add one, copy an article and change the text, times and illustration. Remove
+  past ones whenever convenient; they never show after they end.
+- The arcade-and-bowling illustration is inline SVG coloured by `.art-*` classes.
+
 ## Halal track record (`js/stats.js`, `data/history.json`)
 
 Definitions the owner chose:

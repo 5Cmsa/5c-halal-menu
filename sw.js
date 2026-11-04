@@ -13,6 +13,7 @@ const SHELL = [
   'js/app.js',
   'js/classify.js',
   'js/dom.js',
+  'js/events.js',
   'js/hadith.js',
   'js/halls.js',
   'js/links.js',
