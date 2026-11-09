@@ -53,7 +53,7 @@ Pushing to `main` publishes the live site within about a minute.
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable web app and offline support |
 | `scripts/scrape.mjs` | Scrapes Bon Appétit and Sodexo into `data/<hall>.json`, and Pomona's serving hours into `data/pomona-hours.json` |
 | `scripts/history.mjs` | Adds today's halal counts to `data/history.json`; `--backfill YYYY-MM-DD` fills past days where the site still has them |
-| `.github/workflows/refresh-menus.yml` | Runs both scripts at 01, 13, 17 and 21 UTC (about 6am, 10am, 2pm, 6pm Pacific) and commits `data/` |
+| `.github/workflows/refresh-menus.yml` | Full refresh of the next seven days at 01, 13, 17 and 21 UTC, plus an hourly re-check of today only (`scrape.mjs --today`, at :30 from 14:00 to 04:00 UTC). Commits `data/` only when a menu or count actually changed |
 
 Run locally: `npm run dev` serves on http://localhost:4173. `npm run scrape` and `npm run history` run the scripts; both
 pace their requests, so don't loop them or run them in parallel.
@@ -88,6 +88,11 @@ Six halls. Oldenborg (Pomona) was removed on purpose: it is closed for a while.
   of the Halal and Seafood lists (shown in a collapsed "N more on the standing
   list" group) and are not counted in the track record. A user caught this when a
   listed salmon dish wasn't there.
+- **Halls change dishes on the day.** On 2026-11-08 McConnell's Dinner Specials
+  listed a halal tri tip all week, then swapped it for short ribs between
+  1:30pm and 6pm that day; the site kept showing the tri tip until the next
+  refresh. That is why today's menus are re-checked hourly. It was the real
+  Specials tab, not a different one.
 - McConnell uses Bon Appétit's **Halal icon** (`cor_icon` label `Halal`), which
   becomes `halalFlag: true`. There is no "not halal" icon.
 - Collins and Malott have never labelled anything halal (no icon, no wording,
@@ -221,8 +226,9 @@ Definitions the owner chose:
 
 `data/history.json`: `{ updatedAt, halls: { <id>: { "YYYY-MM-DD": { daytime: { halal, clear }, dinner: { halal, clear } } } } }`.
 
-- Each run rewrites today, so the last run of the day (6pm Pacific) is the one
-  that sticks.
+- Each run rewrites today, so the last run of the day (the hourly check around
+  8:30pm Pacific) is the one that sticks. `history.json` is only rewritten when
+  a count changes.
 - Entries older than 200 days are dropped.
 - Collins, Malott, McConnell and Hoch were backfilled from 2026-08-31; Frary and
   Frank start on 2026-10-12.
