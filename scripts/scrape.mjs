@@ -6,6 +6,7 @@
 //
 // Usage: node scripts/scrape.mjs            (needs Node 18+, no dependencies)
 //        SCRAPE_DAYS=3 node scripts/scrape.mjs
+//        node scripts/scrape.mjs --today   (only today; leaves files alone if nothing changed)
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -13,6 +14,7 @@ import path from 'node:path';
 
 export const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
 const DAYS = Number(process.env.SCRAPE_DAYS ?? 7);
+const TODAY_ONLY = process.argv.includes('--today');
 const TIME_ZONE = 'America/Los_Angeles';
 const USER_AGENT = '5c-halal-menu/1.0 (student menu reader; low-volume scheduled fetch)';
 const PAUSE_MS = 500;
@@ -457,9 +459,19 @@ function pruneItems(result) {
   result.items = Object.fromEntries(Object.entries(result.items).filter(([id, item]) => used.has(id) && item));
 }
 
+// The menus a file describes, without the times they were fetched or errors
+// from other dates, so two fetches of the same menu compare equal.
+function menusOf(file) {
+  if (!file) return null;
+  const days = Object.fromEntries(Object.entries(file.days ?? {}).map(([date, { fetchedAt, ...day }]) => [date, day]));
+  return JSON.stringify({ days, items: file.items });
+}
+
 async function main() {
   const first = today();
-  const dates = Array.from({ length: DAYS }, (_, i) => addDays(first, i));
+  // Halls change dishes on the day (McConnell swapped a halal tri tip for short
+  // ribs a few hours before dinner), so the hourly runs re-check today only.
+  const dates = TODAY_ONLY ? [first] : Array.from({ length: DAYS }, (_, i) => addDays(first, i));
   await mkdir(DATA_DIR, { recursive: true });
   console.log(`Scraping ${dates[0]} to ${dates.at(-1)}`);
 
@@ -484,12 +496,28 @@ async function main() {
       days: sortedDays,
       items: result.items,
     };
+    // On the hourly check, an unchanged menu leaves the file as it is, so there is
+    // nothing to commit and the page's "updated" time stays truthful.
+    if (TODAY_ONLY) {
+      let previous = null;
+      try {
+        previous = JSON.parse(await readFile(file, 'utf8'));
+      } catch {
+        // no earlier file
+      }
+      if (menusOf(previous) === menusOf(output)) {
+        console.log('  unchanged, left as it was');
+        continue;
+      }
+    }
     await writeFile(file, JSON.stringify(output));
     console.log(`  wrote ${path.relative(process.cwd(), file)} (${Object.keys(sortedDays).length} days, ${Object.keys(result.items).length} items)`);
   }
 
-  console.log('pomona hours');
-  await scrapePomonaHours();
+  if (!TODAY_ONLY) {
+    console.log('pomona hours');
+    await scrapePomonaHours();
+  }
 
   if (hallsWithFreshData === 0) {
     console.error('Every hall failed to scrape.');

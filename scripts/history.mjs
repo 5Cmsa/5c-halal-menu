@@ -120,6 +120,7 @@ async function backfill(history, from, until) {
 
 const date = today();
 const history = (await readJson(FILE)) ?? { halls: {} };
+const before = JSON.stringify(history.halls);
 
 const flag = process.argv.indexOf('--backfill');
 if (flag !== -1) {
@@ -143,6 +144,10 @@ for (const [id, days] of Object.entries(history.halls)) {
       .sort(([a], [b]) => a.localeCompare(b)),
   );
 }
-history.updatedAt = new Date().toISOString();
-await writeFile(FILE, JSON.stringify(history));
-console.log(`wrote ${path.relative(process.cwd(), FILE)}`);
+if (JSON.stringify(history.halls) === before) {
+  console.log('no counts changed, left as it was');
+} else {
+  history.updatedAt = new Date().toISOString();
+  await writeFile(FILE, JSON.stringify(history));
+  console.log(`wrote ${path.relative(process.cwd(), FILE)}`);
+}

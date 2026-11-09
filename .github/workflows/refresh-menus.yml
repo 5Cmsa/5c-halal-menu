@@ -2,12 +2,21 @@ name: Refresh menus
 
 on:
   schedule:
-    # 6am, 10am, 2pm and 6pm Pacific (daylight time); one hour earlier in winter.
+    # The next seven days: 6am, 10am, 2pm and 6pm Pacific (daylight time; an
+    # hour earlier in winter).
     - cron: '0 1,13,17,21 * * *'
+    # Today again every hour through the serving day, because halls change
+    # dishes on the day. Keep in step with the check in "Scrape" below.
+    - cron: '30 0-4,14-23 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# An hourly check and a full refresh must not push over each other.
+concurrency:
+  group: refresh-menus
+  cancel-in-progress: false
 
 jobs:
   scrape:
@@ -17,12 +26,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - run: node scripts/scrape.mjs
+      - name: Scrape
+        run: |
+          if [ "${{ github.event.schedule }}" = "30 0-4,14-23 * * *" ]; then
+            node scripts/scrape.mjs --today
+          else
+            node scripts/scrape.mjs
+          fi
       - run: node scripts/history.mjs
       - name: Commit refreshed menus
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
-          git diff --cached --quiet || git commit -m "Refresh menus"
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh menus"
+          git pull --rebase
           git push
